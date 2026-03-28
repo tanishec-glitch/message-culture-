@@ -1,73 +1,82 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Instagram Login</title>
+    <title>Tanish Instagram Pro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
+    
     <style>
-        body { font-family: sans-serif; margin: 0; background: #fafafa; }
-        
-        /* LOGIN SCREEN STYLES */
-        #login-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: white; z-index: 1000; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-        }
-        .login-box { width: 80%; max-width: 300px; text-align: center; }
-        .logo { font-style: italic; font-size: 35px; margin-bottom: 30px; }
-        input { 
-            width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #dbdbdb; 
-            background: #fafafa; border-radius: 5px; outline: none; box-sizing: border-box;
-        }
-        button { 
-            width: 100%; padding: 12px; background: #0095f6; color: white; 
-            border: none; border-radius: 5px; font-weight: bold; margin-top: 15px;
-        }
-
-        /* APP STYLES (HIDDEN UNTIL LOGIN) */
-        #main-app { display: none; padding-bottom: 70px; }
-        .header { background: white; border-bottom: 1px solid #dbdbdb; padding: 12px; text-align: center; position: sticky; top: 0; font-style: italic; }
+        body { font-family: sans-serif; margin: 0; background: #fafafa; padding-bottom: 70px; }
+        .header { background: white; border-bottom: 1px solid #dbdbdb; padding: 12px; text-align: center; position: sticky; top: 0; font-style: italic; z-index:100; font-size: 22px;}
         .post { background: white; border: 1px solid #dbdbdb; margin: 15px auto; max-width: 450px; }
-        .post-img { width: 100%; display: block; }
-        .footer { background: white; border-top: 1px solid #dbdbdb; position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 15px 0; font-size: 26px; }
+        .post-img { width: 100%; display: block; min-height: 200px; background: #eee; }
+        .user-info { padding: 10px; font-weight: bold; }
+        .footer { background: white; border-top: 1px solid #dbdbdb; position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 15px 0; font-size: 26px; z-index:100; }
+        .plus-btn { color: #0095f6; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen">
-        <div class="login-box">
-            <div class="logo">Instagram</div>
-            <input type="text" id="username" placeholder="Phone number, username, or email">
-            <input type="password" placeholder="Password">
-            <button onclick="checkLogin()">Log In</button>
-            <p id="error" style="color:red; font-size: 12px; display: none;">Invalid username. Try "tanish".</p>
-        </div>
+    <div class="header">Instagram Pro</div>
+    
+    <div id="feed">
+        <p style="text-align:center; padding:50px;">Loading your posts...</p>
     </div>
 
-    <div id="main-app">
-        <div class="header" id="header-user">Instagram</div>
-        <div class="post">
-            <div style="padding:10px; font-weight:bold;">tanishec_glitch</div>
-            <img src="https://picsum.photos/500/500?random=5" class="post-img">
-        </div>
-        <div class="footer">
-            <span>🏠</span><span>🔍</span><span>➕</span><span>❤️</span><span>👤</span>
-        </div>
+    <div class="footer">
+        <span onclick="location.reload()">🏠</span>
+        <span class="plus-btn" onclick="addNewPost()">➕</span>
+        <span>👤</span>
     </div>
 
     <script>
-        function checkLogin() {
-            const user = document.getElementById('username').value.toLowerCase();
-            const login = document.getElementById('login-screen');
-            const app = document.getElementById('main-app');
-            const error = document.getElementById('error');
+        // AAPKA REAL FIREBASE CONFIG (Updated with your keys)
+        const firebaseConfig = {
+          apiKey: "AIzaSyDEEypOjcHmWga-U2Lw-xshTwXYKYzJp04",
+          authDomain: "my-insta-backend.firebaseapp.com",
+          projectId: "my-insta-backend",
+          storageBucket: "my-insta-backend.firebasestorage.app",
+          messagingSenderId: "955106968523",
+          appId: "1:955106968523:web:4f038e3f139d1f06ba6c4e"
+        };
 
-            // Logic: Only let them in if they type "tanish" or "admin"
-            if (user === "tanish" || user === "admin") {
-                login.style.display = "none";
-                app.style.display = "block";
-                document.getElementById('header-user').innerText = "Welcome, " + user;
-            } else {
-                error.style.display = "block";
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // 1. DATABASE SE POSTS KHINCHNA
+        db.collection("posts").orderBy("time", "desc").onSnapshot((snapshot) => {
+            const feed = document.getElementById('feed');
+            feed.innerHTML = "";
+            if (snapshot.empty) {
+                feed.innerHTML = "<p style='text-align:center; padding:50px;'>No posts yet. Tap ➕ to post!</p>";
+            }
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                feed.innerHTML += `
+                    <div class="post">
+                        <div class="user-info">tanishec_glitch</div>
+                        <img src="${data.url}" class="post-img">
+                    </div>`;
+            });
+        });
+
+        // 2. NAYA POST SAVE KARNA
+        function addNewPost() {
+            const url = prompt("Google se kisi photo ka link copy karke yahan paste karein:");
+            if (url && url.startsWith("http")) {
+                db.collection("posts").add({
+                    url: url,
+                    time: Date.now()
+                }).then(() => {
+                    console.log("Post saved!");
+                }).catch((error) => {
+                    alert("Error! Shayad Firestore Database 'Test Mode' mein nahi hai.");
+                    console.error(error);
+                });
+            } else if (url) {
+                alert("Please valid image URL daalein (http se shuru hone wala).");
             }
         }
     </script>
