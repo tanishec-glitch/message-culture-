@@ -140,20 +140,25 @@
 
         // AUTH LOGIC
         function handleMobileAuth(type) {
-            const phone = document.getElementById('m-phone').value;
-            const pass = document.getElementById('m-pass').value;
-            if(phone.length < 10 || pass.length < 6) return alert("Valid Phone (10 digit) aur Pass (6 digit) dalo!");
-            
-            const fakeEmail = phone + "@wincash.com";
+    const phone = document.getElementById('m-phone').value;
+    const pass = document.getElementById('m-pass').value;
+    
+    if(phone.length < 10 || pass.length < 6) {
+        return alert("Sahi Mobile (10 digit) aur Password (6 digit) dalo!");
+    }
 
-            if(type === 'reg') {
-                auth.createUserWithEmailAndPassword(fakeEmail, pass).then(u => {
-                    db.collection("wallets").doc(u.user.uid).set({ balance: 50, phone: phone });
-                    alert("Account Created! ₹50 Bonus Added.");
-                }).catch(e => alert(e.message));
-                } else {
-        auth.signInWithEmailAndPassword(fakeEmail, pass)
-        .catch(e => alert("Login Fail: " + e.message));
+    const fakeEmail = phone + "@wincash.com";
+
+    if(type === 'reg') {
+        auth.createUserWithEmailAndPassword(fakeEmail, pass).then(u => {
+            db.collection("wallets").doc(u.user.uid).set({ balance: 50, phone: phone });
+            alert("Account Created! ₹50 Bonus Added.");
+        }).catch(e => alert(e.message));
+    } else {
+        auth.signInWithEmailAndPassword(fakeEmail, pass).catch(e => alert("Login Fail: " + e.message));
+    }
+}
+
     }
 } // <--- Ye wala bracket miss tha jo poore function ko band karta hai
 
