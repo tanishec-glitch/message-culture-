@@ -1,41 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Tanish Gram Pro</title>
+    <title>Tanish Gram - Social</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; margin: 0; background: #fafafa; }
+        body { font-family: -apple-system, sans-serif; margin: 0; background: #fafafa; padding-bottom: 80px; }
         .header { background: white; border-bottom: 1px solid #dbdbdb; padding: 12px; text-align: center; position: sticky; top: 0; font-style: italic; font-size: 24px; z-index: 100; }
         .post { background: white; border: 1px solid #dbdbdb; margin: 15px auto; max-width: 470px; border-radius: 3px; }
-        .post-header { padding: 14px; font-weight: 600; display: flex; align-items: center; }
-        .post-img { width: 100%; display: block; border-top: 1px solid #efefef; border-bottom: 1px solid #efefef; }
+        .post-header { padding: 14px; font-weight: 600; }
+        .post-img { width: 100%; display: block; }
         .post-footer { padding: 12px; }
-        .btn-row { font-size: 24px; margin-bottom: 8px; cursor: pointer; }
-        .like-active { color: #ed4956; }
-        .likes-count { font-weight: 600; font-size: 14px; margin-bottom: 5px; }
-        .auth-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        .btn-blue { background: #0095f6; color: white; border: none; padding: 10px; border-radius: 5px; width: 80%; font-weight: bold; margin-top: 10px; }
-        .footer-nav { background: white; border-top: 1px solid #dbdbdb; position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 15px 0; font-size: 26px; }
-        #auth-screen { display: flex; }
-        #main-app { display: none; }
+        .likes-count { font-weight: 600; font-size: 14px; margin-bottom: 8px; cursor: pointer; }
+        .comment-section { border-top: 1px solid #efefef; padding: 10px; font-size: 14px; max-height: 100px; overflow-y: auto; }
+        .comment-input-row { display: flex; border-top: 1px solid #efefef; padding: 5px; }
+        .comment-input { border: none; flex: 1; outline: none; padding: 8px; font-size: 14px; }
+        .post-btn { color: #0095f6; font-weight: bold; cursor: pointer; padding: 8px; border: none; background: none; }
+        .footer-nav { background: white; border-top: 1px solid #dbdbdb; position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 15px 0; font-size: 26px; z-index: 100; }
     </style>
 </head>
 <body>
 
-    <div id="auth-screen" class="auth-container">
-        <h1 style="font-style: italic; font-size: 40px;">Instagram</h1>
-        <input type="email" id="email" placeholder="Email" style="width: 80%; padding: 10px; margin: 5px; border: 1px solid #dbdbdb;">
-        <input type="password" id="password" placeholder="Password" style="width: 80%; padding: 10px; margin: 5px; border: 1px solid #dbdbdb;">
-        <button class="btn-blue" onclick="handleAuth('signup')">Sign Up</button>
-        <button onclick="handleAuth('login')" style="background:none; border:none; color:#0095f6; margin-top:15px;">Log In</button>
-    </div>
-
     <div id="main-app">
         <div class="header">Instagram</div>
-        <div id="feed" style="padding-bottom: 80px;"></div>
+        <div id="feed"></div>
         <div class="footer-nav">
             <span onclick="location.reload()">🏠</span>
             <span onclick="addNewPost()" style="color:#0095f6;">➕</span>
@@ -44,7 +34,6 @@
     </div>
 
     <script>
-        // --- YOUR FIREBASE CONFIG (Sahi wala) ---
         const firebaseConfig = {
             apiKey: "AIzaSyDEEypOjcHmWga-U2Lw-xshTwXYKYzJp04",
             authDomain: "my-insta-backend.firebaseapp.com",
@@ -57,20 +46,7 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('main-app').style.display = 'block';
-                loadFeed();
-            }
-        });
-
-        function handleAuth(type) {
-            const e = document.getElementById('email').value;
-            const p = document.getElementById('password').value;
-            if(type === 'signup') auth.createUserWithEmailAndPassword(e, p).catch(a => alert(a.message));
-            else auth.signInWithEmailAndPassword(e, p).catch(a => alert(a.message));
-        }
+        auth.onAuthStateChanged(user => { if (user) loadFeed(); else window.location.href="index.html"; });
 
         function loadFeed() {
             db.collection("posts").orderBy("time", "desc").onSnapshot(snap => {
@@ -78,39 +54,54 @@
                 snap.forEach(doc => {
                     const d = doc.data();
                     const postId = doc.id;
-                    const likes = d.likes || 0;
                     html += `
                         <div class="post">
                             <div class="post-header">@${d.username}</div>
                             <img src="${d.url}" class="post-img">
                             <div class="post-footer">
-                                <div class="btn-row">
-                                    <span onclick="likePost('${postId}', ${likes})">❤️</span>
-                                    <span onclick="alert('Comment feature coming soon!')">💬</span>
-                                </div>
-                                <div class="likes-count">${likes} likes</div>
-                                <div style="font-size: 14px;"><b>${d.username}</b> New photo shared!</div>
+                                <div class="likes-count" onclick="likePost('${postId}', ${d.likes || 0})">❤️ ${d.likes || 0} likes</div>
+                                <div id="comments-${postId}" class="comment-section">Loading comments...</div>
+                            </div>
+                            <div class="comment-input-row">
+                                <input id="input-${postId}" class="comment-input" placeholder="Add a comment...">
+                                <button class="post-btn" onclick="addComment('${postId}')">Post</button>
                             </div>
                         </div>`;
+                    loadComments(postId);
                 });
                 document.getElementById('feed').innerHTML = html;
             });
         }
 
-        function likePost(id, currentLikes) {
-            db.collection("posts").doc(id).update({ likes: currentLikes + 1 });
+        function loadComments(postId) {
+            db.collection("posts").doc(postId).collection("comments").orderBy("time", "asc").onSnapshot(snap => {
+                const box = document.getElementById(`comments-${postId}`);
+                let cHtml = "";
+                snap.forEach(c => {
+                    const cd = c.data();
+                    cHtml += `<div><b>${cd.user}</b>: ${cd.text}</div>`;
+                });
+                box.innerHTML = cHtml || "<span style='color:#999'>No comments yet</span>";
+            });
         }
 
+        function addComment(postId) {
+            const text = document.getElementById(`input-${postId}`).value;
+            if(!text) return;
+            db.collection("posts").doc(postId).collection("comments").add({
+                text: text,
+                user: auth.currentUser.email.split('@')[0],
+                time: Date.now()
+            }).then(() => { document.getElementById(`input-${postId}`).value = ""; });
+        }
+
+        function likePost(id, cur) { db.collection("posts").doc(id).update({ likes: cur + 1 }); }
+
         function addNewPost() {
-            const url = prompt("Photo URL Paste Karein:");
-            if (url) {
-                db.collection("posts").add({
-                    url: url,
-                    username: auth.currentUser.email.split('@')[0],
-                    likes: 0,
-                    time: Date.now()
-                });
-            }
+            const url = prompt("Photo URL:");
+            if (url) db.collection("posts").add({
+                url: url, username: auth.currentUser.email.split('@')[0], likes: 0, time: Date.now()
+            });
         }
     </script>
 </body>
