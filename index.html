@@ -3,111 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WinCash Pro - Dashboard</title>
+    <title>WinCash Pro - Multi Game App</title>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js"></script>
+
     <style>
-        :root { --gold: #ffd700; --bg: #0b0e11; --card: #1c2127; --text: #e9edef; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); -webkit-user-select: none; }
-        
-        /* Header & Wallet */
+        :root { --gold: #ffd700; --bg: #0b0e11; --card: #1c2127; --text: #e9edef; --red: #e74c3c; --blue: #3498db; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+
+        /* Dashboard Styles */
         .header { background: #1c2127; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 100; }
-        .wallet-btn { background: linear-gradient(90deg, #f39c12, #f1c40f); color: #000; padding: 6px 15px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 5px; cursor: pointer; border: none; }
+        .wallet-btn { background: linear-gradient(90deg, #f39c12, #f1c40f); color: #000; padding: 8px 15px; border-radius: 20px; font-weight: bold; border: none; cursor: pointer; }
+        
+        .game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px; padding-bottom: 100px; }
+        .game-card { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid #333; text-align: center; padding-bottom: 10px; position: relative; }
+        .game-img { font-size: 45px; padding: 20px; background: #242a32; }
+        
+        /* Screen Management */
+        .screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 1000; overflow-y: auto; }
+        .screen.active { display: block !important; }
 
-        /* Banner Slider (Static for now) */
-        .banner { margin: 15px; height: 120px; background: linear-gradient(45deg, #1e3a8a, #3b82f6); border-radius: 12px; display: flex; align-items: center; justify-content: center; text-align: center; border: 1px solid #444; }
-
-        /* Game Grid */
-        .section-title { padding: 0 15px; font-size: 18px; font-weight: bold; color: var(--gold); margin-bottom: 10px; }
-        .game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 15px 80px 15px; }
-        .game-card { background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid #333; position: relative; transition: 0.2s; }
-        .game-card:active { transform: scale(0.95); }
-        .game-img { width: 100%; height: 100px; background: #2c343f; display: flex; align-items: center; justify-content: center; font-size: 40px; }
-        .game-info { padding: 10px; text-align: center; font-weight: bold; font-size: 14px; }
-        .tag { position: absolute; top: 5px; right: 5px; background: #e74c3c; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-
-        /* Bottom Nav */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #1c2127; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: #888; cursor: pointer; }
-        .nav-item.active { color: var(--gold); }
-
-        /* Overlay for screens */
-        .screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 200; overflow-y: auto; }
-        .screen.active { display: block; }
+        /* Dragon vs Tiger UI */
+        .dvt-container { padding: 20px; text-align: center; }
+        .timer-circle { font-size: 24px; color: var(--gold); background: #1c2127; width: 60px; height: 60px; line-height: 60px; border-radius: 50%; border: 3px solid var(--gold); margin: 0 auto 20px; }
+        .card-box { width: 90px; height: 130px; background: #2c3e50; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 35px; font-weight: bold; border: 2px solid #444; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+        .bet-area { display: grid; grid-template-columns: 1fr 0.6fr 1fr; gap: 8px; margin-top: 20px; }
+        .bet-btn { border: none; border-radius: 12px; padding: 15px 5px; color: white; font-weight: bold; cursor: pointer; }
+        .chip-btn { background: #333; color: var(--gold); border: 1px solid var(--gold); padding: 8px 15px; border-radius: 50px; margin: 5px; }
+        
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #1c2127; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #333; z-index: 99; }
     </style>
 </head>
 <body>
 
-    <div id="dashboard">
+    <div id="main-dash">
         <div class="header">
-            <div style="font-weight: bold; font-size: 20px; font-style: italic;">WinCash🏆</div>
-            <button class="wallet-btn" onclick="openScreen('wallet-screen')">
-                <span>🪙</span> <span id="main-bal">0.00</span>
-            </button>
+            <b style="font-size: 22px; color: var(--gold);">WinCash🏆</b>
+            <button class="wallet-btn" onclick="openScreen('wallet-scr')">🪙 ₹<span id="dash-bal">0</span></button>
         </div>
 
-        <div class="banner">
-            <div>
-                <h3 style="margin:0;">Joining Bonus ₹50! 🎁</h3>
-                <p style="font-size: 12px; margin: 5px 0 0;">Add ₹100 & Get ₹20 Extra</p>
-            </div>
+        <div style="background: linear-gradient(90deg, #1e3a8a, #1e40af); margin: 15px; padding: 20px; border-radius: 15px; text-align: center;">
+            <h2 style="margin:0;">₹50 Registration Bonus! 🎁</h2>
+            <p>Play Games & Win Real Cash</p>
         </div>
 
-        <div class="section-title">All Games</div>
         <div class="game-grid">
-            <div class="game-card" onclick="play('Snakes & Ladders')">
-                <div class="tag">PvP</div>
-                <div class="game-img">🐍</div>
-                <div class="game-info">Snakes & Ladders</div>
-            </div>
-            <div class="game-card" onclick="play('Dragon vs Tiger')">
-                <div class="tag" style="background:#f39c12">Hot</div>
+            <div class="game-card" onclick="startDVT()">
+                <div style="position:absolute; background:red; font-size:10px; padding:2px 5px; top:5px; right:5px; border-radius:3px;">HOT</div>
                 <div class="game-img">🐉</div>
-                <div class="game-info">Dragon vs Tiger</div>
+                <b>Dragon vs Tiger</b>
             </div>
-            <div class="game-card" onclick="play('Andar Bahar')">
-                <div class="game-img">🃏</div>
-                <div class="game-info">Andar Bahar</div>
-            </div>
-            <div class="game-card" onclick="play('Spin the Wheel')">
+            <div class="game-card" onclick="alert('Coming Soon!')">
                 <div class="game-img">🎡</div>
-                <div class="game-info">Spin the Wheel</div>
+                <b>Spin Wheel</b>
             </div>
-            <div class="game-card" onclick="play('Ludo')">
+            <div class="game-card" onclick="alert('Coming Soon!')">
+                <div class="game-img">🃏</div>
+                <b>Andar Bahar</b>
+            </div>
+            <div class="game-card" onclick="alert('Coming Soon!')">
                 <div class="game-img">🎲</div>
-                <div class="game-info">Ludo King</div>
-            </div>
-            <div class="game-card" onclick="play('Crash')">
-                <div class="game-img">🚀</div>
-                <div class="game-info">Crash Game</div>
+                <b>Ludo King</b>
             </div>
         </div>
 
         <div class="bottom-nav">
-            <div class="nav-item active">🏠<br>Home</div>
-            <div class="nav-item" onclick="openScreen('earn-screen')">🔗<br>Refer</div>
-            <div class="nav-item" onclick="openScreen('wallet-screen')">💸<br>Wallet</div>
-            <div class="nav-item" onclick="auth.signOut()">👤<br>Logout</div>
+            <span>🏠 Home</span>
+            <span onclick="openScreen('wallet-scr')">💸 Wallet</span>
+            <span onclick="location.reload()">🔄 Refresh</span>
         </div>
     </div>
 
-    <div id="wallet-screen" class="screen">
+    <div id="dvt-scr" class="screen">
         <div class="header">
-            <span onclick="closeScreen('wallet-screen')" style="font-size: 24px;">←</span>
-            <b>Wallet & Payments</b>
-            <span></span>
+            <span onclick="closeDVT()" style="font-size: 25px;">←</span>
+            <b>Dragon vs Tiger</b>
+            <b style="color:var(--gold)">₹<span id="game-bal">0</span></b>
         </div>
-        <div style="padding: 20px; text-align: center;">
-            <p>Available Balance</p>
-            <h1 style="color:var(--gold); font-size: 40px;">₹<span id="screen-bal">0</span></h1>
-            <button style="width:100%; padding:15px; background:#27ae60; border:none; color:white; border-radius:10px; font-weight:bold; margin-bottom:10px;">ADD CASH (Min ₹100)</button>
-            <button style="width:100%; padding:15px; background:#e74c3c; border:none; color:white; border-radius:10px; font-weight:bold;">WITHDRAW (Min ₹200)</button>
+        
+        <div class="dvt-container">
+            <div class="timer-circle" id="dvt-timer">10</div>
+            
+            <div style="display: flex; justify-content: space-around; margin-bottom: 20px;">
+                <div>
+                    <div id="card-d" class="card-box" style="border-color: var(--red);">?</div>
+                    <p style="color:var(--red); font-weight:bold;">DRAGON</p>
+                </div>
+                <div style="align-self:center; font-weight:bold; font-size:20px;">VS</div>
+                <div>
+                    <div id="card-t" class="card-box" style="border-color: var(--blue);">?</div>
+                    <p style="color:var(--blue); font-weight:bold;">TIGER</p>
+                </div>
+            </div>
+
+            <div class="bet-area">
+                <button class="bet-btn" style="background:var(--red)" onclick="placeBet('Dragon')">DRAGON<br>2x<br><br><span id="b-dragon">₹0</span></button>
+                <button class="bet-btn" style="background:#8e44ad" onclick="placeBet('Tie')">TIE<br>9x<br><br><span id="b-tie">₹0</span></button>
+                <button class="bet-btn" style="background:var(--blue)" onclick="placeBet('Tiger')">TIGER<br>2x<br><br><span id="b-tiger">₹0</span></button>
+            </div>
+
+            <div style="margin-top:25px;">
+                <p>Chips: 
+                    <button class="chip-btn" onclick="currentChip=10">₹10</button>
+                    <button class="chip-btn" onclick="currentChip=50">₹50</button>
+                    <button class="chip-btn" onclick="currentChip=100">₹100</button>
+                </p>
+            </div>
+            <h3 id="dvt-msg" style="color:var(--gold)"></h3>
+        </div>
+    </div>
+
+    <div id="wallet-scr" class="screen">
+        <div class="header"><span onclick="closeScreen('wallet-scr')">←</span><b>Wallet</b><span></span></div>
+        <div style="padding:40px; text-align:center;">
+            <p>Total Balance</p>
+            <h1 id="wall-bal" style="font-size:45px; color:var(--gold); margin:10px 0;">₹0</h1>
+            <button class="wallet-btn" style="width:100%; padding:15px; margin-bottom:10px;" onclick="alert('Min Deposit ₹100')">ADD CASH</button>
+            <button class="wallet-btn" style="width:100%; padding:15px; background:var(--red); color:white;" onclick="alert('Min Withdraw ₹200')">WITHDRAW</button>
         </div>
     </div>
 
     <script>
-        // CONFIG (Same as before)
+        // FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyDEEypOjcHmWga-U2Lw-xshTwXYKYzJp04",
             authDomain: "my-insta-backend.firebaseapp.com",
@@ -120,186 +138,122 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // Check Auth
+        let wallet = 0;
+        let userUID = "";
+        let currentChip = 10;
+        let myBets = { Dragon: 0, Tiger: 0, Tie: 0 };
+        let timerVal = 10;
+        let canBet = true;
+        let gameLoop;
+
+        // AUTH SYSTEM
         auth.onAuthStateChanged(user => {
             if (user) {
-                loadWallet(user.uid);
+                userUID = user.uid;
+                loadWalletData();
             } else {
-                // For testing, if not logged in, show a simple prompt
-                let email = prompt("Testing Email:");
-                let pass = prompt("Testing Password (6 chars):");
-                auth.signInWithEmailAndPassword(email, pass).catch(() => {
-                    auth.createUserWithEmailAndPassword(email, pass).then(u => {
+                let mail = prompt("Enter Email for Game:");
+                let pass = prompt("Enter Password (6+ characters):");
+                auth.signInWithEmailAndPassword(mail, pass).catch(() => {
+                    auth.createUserWithEmailAndPassword(mail, pass).then(u => {
                         db.collection("wallets").doc(u.user.uid).set({ balance: 50 });
                     });
                 });
             }
         });
 
-        function loadWallet(uid) {
-            db.collection("wallets").doc(uid).onSnapshot(doc => {
-                const bal = doc.data().balance || 0;
-                document.getElementById('main-bal').innerText = bal.toFixed(2);
-                document.getElementById('screen-bal').innerText = bal.toFixed(2);
+        function loadWalletData() {
+            db.collection("wallets").doc(userUID).onSnapshot(doc => {
+                wallet = doc.data().balance;
+                document.getElementById('dash-bal').innerText = wallet.toFixed(2);
+                document.getElementById('game-bal').innerText = wallet.toFixed(2);
+                document.getElementById('wall-bal').innerText = "₹" + wallet.toFixed(2);
             });
         }
 
+        // NAVIGATION
         function openScreen(id) { document.getElementById(id).classList.add('active'); }
         function closeScreen(id) { document.getElementById(id).classList.remove('active'); }
 
-        function play(name) {
-            alert("Starting " + name + "... (Game logic coming soon)");
+        // DRAGON VS TIGER LOGIC
+        function startDVT() {
+            openScreen('dvt-scr');
+            resetTable();
+            runTimer();
+        }
+
+        function closeDVT() {
+            closeScreen('dvt-scr');
+            clearInterval(gameLoop);
+        }
+
+        function runTimer() {
+            canBet = true;
+            timerVal = 10;
+            document.getElementById('dvt-msg').innerText = "Place Your Bets!";
+            gameLoop = setInterval(() => {
+                timerVal--;
+                document.getElementById('dvt-timer').innerText = timerVal;
+                if(timerVal <= 0) {
+                    clearInterval(gameLoop);
+                    processWinner();
+                }
+            }, 1000);
+        }
+
+        function placeBet(side) {
+            if(!canBet) return;
+            if(wallet < currentChip) return alert("Low Balance!");
+
+            wallet -= currentChip;
+            myBets[side] += currentChip;
+            db.collection("wallets").doc(userUID).update({ balance: wallet });
+            document.getElementById('b-' + side.toLowerCase()).innerText = "₹" + myBets[side];
+        }
+
+        function processWinner() {
+            canBet = false;
+            document.getElementById('dvt-msg').innerText = "Shuffling...";
+            
+            setTimeout(() => {
+                const cards = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+                const powers = {'A':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13};
+                
+                const dC = cards[Math.floor(Math.random()*13)];
+                const tC = cards[Math.floor(Math.random()*13)];
+                
+                document.getElementById('card-d').innerText = dC;
+                document.getElementById('card-t').innerText = tC;
+
+                let win = "";
+                if(powers[dC] > powers[tC]) win = "Dragon";
+                else if(powers[tC] > powers[dC]) win = "Tiger";
+                else win = "Tie";
+
+                document.getElementById('dvt-msg').innerText = win.toUpperCase() + " WINS!";
+                
+                // Winning Calculation
+                if(myBets[win] > 0) {
+                    let prize = (win === 'Tie') ? myBets[win] * 9 : myBets[win] * 2;
+                    db.collection("wallets").doc(userUID).update({ balance: wallet + prize });
+                    alert("You Won ₹" + prize + "!");
+                }
+
+                setTimeout(() => {
+                    resetTable();
+                    runTimer();
+                }, 4000);
+            }, 2000);
+        }
+
+        function resetTable() {
+            myBets = { Dragon: 0, Tiger: 0, Tie: 0 };
+            document.getElementById('b-dragon').innerText = "₹0";
+            document.getElementById('b-tiger').innerText = "₹0";
+            document.getElementById('b-tie').innerText = "₹0";
+            document.getElementById('card-d').innerText = "?";
+            document.getElementById('card-t').innerText = "?";
         }
     </script>
-    <div id="dvt-screen" class="screen">
-    <div class="header">
-        <span onclick="closeScreen('dvt-screen')" style="font-size: 24px; cursor: pointer;">←</span>
-        <b>Dragon vs Tiger 🐉🐯</b>
-        <div class="wallet-btn" style="background:#333; color:var(--gold)">₹<span id="game-bal">0</span></div>
-    </div>
-
-    <div style="padding: 20px; text-align: center;">
-        <div id="timer-box" style="font-size: 24px; color: #ff4444; font-weight: bold; margin-bottom: 20px; background: #1c2127; padding: 10px; border-radius: 10px;">
-            Round Starts In: <span id="timer">10</span>s
-        </div>
-
-        <div style="display: flex; justify-content: space-around; margin-bottom: 30px;">
-            <div id="dragon-card" style="width: 100px; height: 140px; background: #2c3e50; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 2px solid #e74c3c; box-shadow: 0 0 15px #e74c3c;">?</div>
-            <div style="font-size: 30px; align-self: center; font-weight: bold;">VS</div>
-            <div id="tiger-card" style="width: 100px; height: 140px; background: #2c3e50; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 2px solid #3498db; box-shadow: 0 0 15px #3498db;">?</div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 0.5fr 1fr; gap: 10px;">
-            <button class="btn" style="background:#e74c3c; height: 100px; border-radius: 15px;" onclick="placeBet('Dragon')">
-                DRAGON<br><small>2x Win</small><br><br><b id="bet-dragon">₹0</b>
-            </button>
-            <button class="btn" style="background:#8e44ad; height: 100px; border-radius: 15px;" onclick="placeBet('Tie')">
-                TIE<br><small>9x Win</small><br><br><b id="bet-tie">₹0</b>
-            </button>
-            <button class="btn" style="background:#3498db; height: 100px; border-radius: 15px;" onclick="placeBet('Tiger')">
-                TIGER<br><small>2x Win</small><br><br><b id="bet-tiger">₹0</b>
-            </button>
-        </div>
-
-        <div style="margin-top: 25px; background: #1c2127; padding: 15px; border-radius: 15px;">
-            <p style="margin-top:0;">Select Bet Amount:</p>
-            <div style="display: flex; justify-content: center; gap: 10px;">
-                <button class="wallet-btn" style="background: #f1c40f; color: black;" onclick="setChip(10)">₹10</button>
-                <button class="wallet-btn" style="background: #f39c12; color: black;" onclick="setChip(50)">₹50</button>
-                <button class="wallet-btn" style="background: #e67e22; color: black;" onclick="setChip(100)">₹100</button>
-            </div>
-        </div>
-        
-        <p id="game-msg" style="margin-top: 15px; font-size: 20px; font-weight: bold; height: 30px;"></p>
-    </div>
-</div>
-// --- DRAGON VS TIGER LOGIC ---
-let currentChip = 10;
-let bets = { Dragon: 0, Tiger: 0, Tie: 0 };
-let timeLeft = 10;
-let isBettingOpen = true;
-let gameTimer;
-
-function setChip(val) { currentChip = val; alert("Selected: ₹" + val); }
-
-function placeBet(side) {
-    if(!isBettingOpen) return alert("Bets are Closed!");
-    if(wallet < currentChip) return alert("Low Balance! Add Money.");
-
-    // Balance Update
-    wallet -= currentChip;
-    bets[side] += currentChip;
-    
-    // UI Update
-    updateUIBalances();
-    document.getElementById('bet-' + side.toLowerCase()).innerText = "₹" + bets[side];
-    
-    // Firebase Update
-    db.collection("wallets").doc(me.uid).update({ balance: wallet });
-}
-
-function startRound() {
-    isBettingOpen = true;
-    timeLeft = 10;
-    document.getElementById('timer-box').innerHTML = 'Round Starts In: <span id="timer">10</span>s';
-    
-    gameTimer = setInterval(() => {
-        timeLeft--;
-        document.getElementById('timer').innerText = timeLeft;
-        
-        if(timeLeft <= 0) {
-            clearInterval(gameTimer);
-            processResult();
-        }
-    }, 1000);
-}
-
-function processResult() {
-    isBettingOpen = false;
-    document.getElementById('timer-box').innerText = "Shuffling Cards...";
-    
-    setTimeout(() => {
-        const cards = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-        const cardPowers = { 'A':1, '2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, '10':10, 'J':11, 'Q':12, 'K':13 };
-        
-        const dCard = cards[Math.floor(Math.random() * 13)];
-        const tCard = cards[Math.floor(Math.random() * 13)];
-        
-        document.getElementById('dragon-card').innerText = dCard;
-        document.getElementById('tiger-card').innerText = tCard;
-
-        let winner = "";
-        if(cardPowers[dCard] > cardPowers[tCard]) winner = "Dragon";
-        else if(cardPowers[tCard] > cardPowers[dCard]) winner = "Tiger";
-        else winner = "Tie";
-
-        document.getElementById('game-msg').innerText = "Winner: " + winner.toUpperCase() + "!";
-        document.getElementById('game-msg').style.color = (winner === "Dragon") ? "#e74c3c" : (winner === "Tiger") ? "#3498db" : "#8e44ad";
-
-        // Pay Winnings
-        if(bets[winner] > 0) {
-            let profit = (winner === "Tie") ? bets[winner] * 9 : bets[winner] * 2;
-            wallet += profit;
-            db.collection("wallets").doc(me.uid).update({ balance: wallet });
-            alert("Congratulations! You won ₹" + profit);
-        }
-
-        // Cleanup & Next Round
-        setTimeout(() => {
-            resetTable();
-            startRound();
-        }, 4000);
-    }, 2000);
-}
-
-function resetTable() {
-    bets = { Dragon: 0, Tiger: 0, Tie: 0 };
-    document.getElementById('bet-dragon').innerText = "₹0";
-    document.getElementById('bet-tiger').innerText = "₹0";
-    document.getElementById('bet-tie').innerText = "₹0";
-    document.getElementById('dragon-card').innerText = "?";
-    document.getElementById('tiger-card').innerText = "?";
-    document.getElementById('game-msg').innerText = "";
-}
-
-function updateUIBalances() {
-    document.getElementById('main-bal').innerText = wallet.toFixed(2);
-    document.getElementById('game-bal').innerText = wallet.toFixed(2);
-    document.getElementById('screen-bal').innerText = wallet.toFixed(2);
-}
-
-// Override Play Function
-function play(name) {
-    if(name === 'Dragon vs Tiger') {
-        openScreen('dvt-screen');
-        resetTable();
-        startRound();
-    } else {
-        alert(name + " Coming Soon!");
-    }
-}
-
 </body>
 </html>
-
-
