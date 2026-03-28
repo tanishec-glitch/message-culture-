@@ -8,50 +8,99 @@
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js"></script>
     <style>
-        :root { --bg: #000; --border: #262626; --accent: #0095f6; --text: #fff; }
+        :root { --bg: #000; --border: #262626; --accent: #0095f6; --text: #fff; --gray: #8e8e8e; }
         body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--text); -webkit-tap-highlight-color: transparent; }
         .header { background: var(--bg); border-bottom: 1px solid var(--border); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; height: 44px; }
         .footer { background: var(--bg); border-top: 1px solid var(--border); position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 12px 0; font-size: 24px; z-index: 1000; }
         .section { display: none; padding-bottom: 70px; min-height: 100vh; }
         .active { display: block; }
-        .post-card { border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 10px; }
+
+        /* Auth Screen */
+        #auth-sec { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; }
+        input { background: #121212; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 5px; width: 80%; margin: 5px 0; }
+        .btn-blue { background: var(--accent); color: white; border: none; padding: 10px; width: 85%; border-radius: 5px; font-weight: bold; cursor: pointer; }
+
+        /* Story & Posts */
+        .story-bar { display: flex; overflow-x: auto; padding: 10px; gap: 15px; border-bottom: 1px solid var(--border); }
+        .story-circle { width: 60px; height: 60px; border-radius: 50%; border: 2px solid #fd1d1d; padding: 2px; object-fit: cover; }
+        .post-card { border-bottom: 1px solid var(--border); padding-bottom: 10px; }
         .post-img { width: 100%; display: block; background: #1a1a1a; }
+        
+        /* Profile & Grid */
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
         .grid-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; cursor: pointer; }
-        #post-viewer { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:5000; overflow-y:auto; }
+        
+        /* Modal Views */
+        #viewer { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:5000; overflow-y:auto; }
+        
+        /* Chat */
+        .msg-box { height: 75vh; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; }
+        .msg { padding: 8px 12px; border-radius: 15px; margin: 4px; max-width: 70%; font-size: 14px; }
+        .sent { background: var(--accent); align-self: flex-end; }
+        .rec { background: var(--border); align-self: flex-start; }
     </style>
 </head>
 <body>
 
-    <div class="header">
+    <div id="auth-sec" class="section active">
+        <h1 style="font-style: italic;">Instagram</h1>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="pass" placeholder="Password">
+        <button class="btn-blue" onclick="handleAuth('login')">Log In</button>
+        <p onclick="handleAuth('reg')" style="color: var(--accent); cursor: pointer;">Don't have an account? Sign Up</p>
+    </div>
+
+    <div id="app-header" class="header" style="display:none;">
         <div style="font-size: 22px; font-weight: bold; font-style: italic;">Instagram</div>
-        <div onclick="upload()">➕</div>
-    </div>
-
-    <div id="post-viewer">
-        <div style="padding:15px; border-bottom:1px solid var(--border); display:flex; align-items:center;">
-            <span onclick="this.parentElement.parentElement.style.display='none'" style="font-size:24px; margin-right:20px;">⬅️</span><b>Post Details</b>
+        <div style="display:flex; gap:15px;">
+            <span onclick="uploadMenu()">➕</span>
+            <span onclick="go('chat')">📩</span>
+            <span onclick="logout()" style="font-size: 14px; color: red;">Logout</span>
         </div>
-        <div id="v-content"></div>
     </div>
 
-    <div id="feed" class="section active"><div id="f-cont"></div></div>
-    
+    <div id="feed" class="section">
+        <div class="story-bar" id="story-list"></div>
+        <div id="feed-cont"></div>
+    </div>
+
+    <div id="reels" class="section" style="background: black;">
+        <div id="reels-list" style="height:92vh; overflow-y:scroll; scroll-snap-type:y mandatory;"></div>
+    </div>
+
     <div id="profile" class="section">
         <div style="padding: 20px 15px; display: flex; align-items: center; gap: 20px;">
             <img id="my-dp" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" style="width:75px; height:75px; border-radius:50%; object-fit:cover;">
-            <div style="display: flex; flex: 1; justify-content: space-around; text-align: center;">
+            <div style="display:flex; flex:1; justify-content:space-around; text-align:center;">
                 <div><b id="pc">0</b><br><small>posts</small></div>
-                <div><b>267</b><br><small>followers</small></div>
+                <div><b id="fc">267</b><br><small>followers</small></div>
                 <div><b>258</b><br><small>following</small></div>
             </div>
         </div>
-        <div style="padding:0 15px;"><b id="my-name">tanish_mandloi._</b></div>
-        <div class="grid" id="my-grid" style="margin-top:20px;"></div>
+        <div style="padding:0 15px;"><b id="my-name">User</b><br><span id="my-bio" style="font-size:14px; color:gray;">Breathe. Believe. Begin. 🌿</span></div>
+        <button onclick="editP()" style="background:var(--border); color:white; border:none; padding:8px; width:94%; margin:10px 3%; border-radius:5px;">Edit Profile</button>
+        <div class="grid" id="my-grid"></div>
     </div>
 
-    <div class="footer">
+    <div id="chat" class="section">
+        <h3 style="padding:15px;">Messages</h3>
+        <div id="user-list"></div>
+    </div>
+
+    <div id="chat-win" class="section">
+        <div class="header"><span onclick="go('chat')">⬅️</span> <b id="cw-name">Chat</b></div>
+        <div id="msg-list" class="msg-box"></div>
+        <div style="padding:10px; display:flex; background:black;"><input id="m-in" style="flex:1;"><button onclick="sendMsg()">Send</button></div>
+    </div>
+
+    <div id="viewer">
+        <div class="header"><span onclick="closeV()">⬅️</span> <b>Post</b></div>
+        <div id="v-cont"></div>
+    </div>
+
+    <div id="app-footer" class="footer" style="display:none;">
         <span onclick="go('feed')">🏠</span>
+        <span onclick="go('reels')">🎬</span>
         <span onclick="go('profile')">👤</span>
     </div>
 
@@ -68,83 +117,146 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        let me = { name: "User" };
+        let me = {}; let activeChat = "";
+
+        // --- AUTH LOGIC ---
+        function handleAuth(type) {
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('pass').value;
+            if(type === 'reg') {
+                auth.createUserWithEmailAndPassword(e,p).then(u => {
+                    db.collection("users").doc(u.user.uid).set({name: e.split('@')[0], bio: "", dp: "", followers: 267});
+                    alert("Registered!");
+                });
+            } else {
+                auth.signInWithEmailAndPassword(e,p).catch(err => alert(err.message));
+            }
+        }
 
         auth.onAuthStateChanged(async user => {
             if (user) {
-                const d = await db.collection("users").doc(user.uid).get();
-                if(d.exists) me = d.data();
+                const doc = await db.collection("users").doc(user.uid).get();
+                me = doc.data(); me.uid = user.uid;
+                document.getElementById('auth-sec').classList.remove('active');
+                document.getElementById('app-header').style.display = 'flex';
+                document.getElementById('app-footer').style.display = 'flex';
                 go('feed');
             } else {
-                let e = prompt("Email:"), p = prompt("Password:");
-                auth.signInWithEmailAndPassword(e,p).catch(()=>location.reload());
+                document.getElementById('auth-sec').classList.add('active');
+                document.getElementById('app-header').style.display = 'none';
+                document.getElementById('app-footer').style.display = 'none';
             }
         });
 
+        function logout() { auth.signOut(); }
+
+        // --- NAVIGATION ---
         function go(id) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            if(id === 'feed') loadF();
+            if(id === 'feed') { loadF(); loadS(); }
             if(id === 'profile') loadP();
+            if(id === 'chat') loadU();
+            if(id === 'reels') loadR();
         }
 
-        // --- FEED (No Filter to avoid Index Error) ---
-        function loadF() {
-            db.collection("posts").onSnapshot(snap => {
-                let h = "";
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    h += `<div class="post-card">
-                        <div style="padding:10px; font-weight:bold;">@${d.username}</div>
-                        <img src="${d.url}" class="post-img" ondblclick="like('${doc.id}', ${d.likes || 0})">
-                        <div style="padding:10px;">❤️ <b>${d.likes || 0} likes</b></div>
-                    </div>`;
-                });
-                document.getElementById('f-cont').innerHTML = h || "<p style='text-align:center'>No posts yet.</p>";
-            });
+        // --- UPLOAD & DELETE ---
+        function uploadMenu() {
+            const type = prompt("Upload: 1.Photo 2.Reel 3.Story (Enter number)");
+            const url = prompt("Paste URL:");
+            if(!url) return;
+            const coll = (type == "3") ? "stories" : "posts";
+            db.collection(coll).add({
+                url: url, uid: me.uid, username: me.name, dp: me.dp, 
+                type: (type=="2"?"reel":"photo"), likes: 0, time: Date.now()
+            }).then(() => alert("Uploaded!"));
         }
 
-        // --- PROFILE GRID ---
-        async function loadP() {
-            document.getElementById('my-name').innerText = me.name;
-            const snap = await db.collection("posts").get();
-            let gh = "", count = 0;
-            snap.forEach(doc => {
-                const d = doc.data();
-                if(d.uid === auth.currentUser.uid) {
-                    count++;
-                    gh += `<img src="${d.url}" class="grid-img" onclick="view('${doc.id}')">`;
-                }
-            });
-            document.getElementById('pc').innerText = count;
-            document.getElementById('my-grid').innerHTML = gh;
-        }
-
-        // --- VIEW & LIKE ---
-        async function view(id) {
-            const d = (await db.collection("posts").doc(id).get()).data();
-            document.getElementById('v-content').innerHTML = `
-                <div class="post-card">
-                    <div style="padding:10px; font-weight:bold;">@${d.username}</div>
-                    <img src="${d.url}" class="post-img">
-                    <button onclick="del('${id}')" style="color:red; background:none; border:none; padding:15px;">Delete Post</button>
-                </div>`;
-            document.getElementById('post-viewer').style.display = 'block';
-        }
-
-        function like(id, l) { db.collection("posts").doc(id).update({ likes: l + 1 }); }
-        
-        async function del(id) {
-            if(confirm("Delete?")) {
-                await db.collection("posts").doc(id).delete();
-                document.getElementById('post-viewer').style.display = 'none';
-                loadP();
+        async function del(coll, id) {
+            if(confirm("Delete this?")) {
+                await db.collection(coll).doc(id).delete();
+                closeV(); go('profile');
             }
         }
 
-        function upload() {
-            const u = prompt("Image URL:");
-            if(u) db.collection("posts").add({ url: u, uid: auth.currentUser.uid, username: me.name, likes: 0, time: Date.now() });
+        // --- LOAD DATA ---
+        function loadF() {
+            db.collection("posts").where("type","==","photo").onSnapshot(snap => {
+                let h = "";
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    h += `<div class="post-card"><div style="padding:10px; font-weight:bold;">@${d.username}</div>
+                    <img src="${d.url}" class="post-img" ondblclick="db.collection('posts').doc('${doc.id}').update({likes: (${d.likes||0}+1)})">
+                    <div style="padding:10px;">❤️ ${d.likes||0} likes <span onclick="comment('${doc.id}')">💬</span></div></div>`;
+                });
+                document.getElementById('feed-cont').innerHTML = h;
+            });
+        }
+
+        async function loadP() {
+            document.getElementById('my-name').innerText = me.name;
+            document.getElementById('my-bio').innerText = me.bio || "Breathe. Believe. Begin. 🌿";
+            document.getElementById('my-dp').src = me.dp || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+            const snap = await db.collection("posts").where("uid","==",me.uid).get();
+            document.getElementById('pc').innerText = snap.size;
+            let gh = "";
+            snap.forEach(doc => gh += `<img src="${doc.data().url}" class="grid-img" onclick="view('${doc.id}')">`);
+            document.getElementById('my-grid').innerHTML = gh;
+        }
+
+        function loadR() {
+            db.collection("posts").where("type","==","reel").onSnapshot(snap => {
+                let h = "";
+                snap.forEach(doc => h += `<div style="height:92vh; scroll-snap-align:start;"><video src="${doc.data().url}" style="width:100%; height:100%; object-fit:cover;" loop autoplay muted playsinline></video></div>`);
+                document.getElementById('reels-list').innerHTML = h;
+            });
+        }
+
+        function loadS() {
+            db.collection("stories").onSnapshot(snap => {
+                let h = "";
+                snap.forEach(doc => h += `<img src="${doc.data().url}" class="story-circle" onclick="viewStory('${doc.id}', '${doc.data().url}')">`);
+                document.getElementById('story-list').innerHTML = h || "No Stories";
+            });
+        }
+
+        // --- VIEW & INTERACT ---
+        async function view(id) {
+            const d = (await db.collection("posts").doc(id).get()).data();
+            document.getElementById('v-cont').innerHTML = `<div class="post-card"><img src="${d.url}" class="post-img">
+            <button onclick="del('posts', '${id}')" style="color:red; width:100%; padding:15px; border:none; background:none; font-weight:bold;">Delete</button></div>`;
+            document.getElementById('viewer').style.display = 'block';
+        }
+        function closeV() { document.getElementById('viewer').style.display = 'none'; }
+
+        function loadU() {
+            db.collection("users").get().then(snap => {
+                let h = "";
+                snap.forEach(doc => { if(doc.id != me.uid) h += `<div onclick="openChat('${doc.id}','${doc.data().name}')" style="padding:15px; border-bottom:1px solid #222;">${doc.data().name}</div>`; });
+                document.getElementById('user-list').innerHTML = h;
+            });
+        }
+
+        function openChat(id, name) {
+            activeChat = id; document.getElementById('cw-name').innerText = name;
+            go('chat-win');
+            const cid = [me.uid, id].sort().join("_");
+            db.collection("chats").doc(cid).collection("messages").orderBy("time","asc").onSnapshot(snap => {
+                let h = ""; snap.forEach(doc => { h += `<div class="msg ${doc.data().sender==me.uid?'sent':'rec'}">${doc.data().text}</div>`; });
+                document.getElementById('msg-list').innerHTML = h;
+            });
+        }
+
+        function sendMsg() {
+            const t = document.getElementById('m-in').value; if(!t) return;
+            const cid = [me.uid, activeChat].sort().join("_");
+            db.collection("chats").doc(cid).collection("messages").add({text: t, sender: me.uid, time: Date.now()});
+            document.getElementById('m-in').value = "";
+        }
+
+        function editP() {
+            const n = prompt("Name:", me.name); const b = prompt("Bio:", me.bio); const d = prompt("DP URL:", me.dp);
+            if(n) db.collection("users").doc(me.uid).update({name: n, bio: b, dp: d}).then(() => location.reload());
         }
     </script>
 </body>
