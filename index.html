@@ -1,51 +1,67 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Tanish Gram - Profile Fix</title>
+    <title>Tanish Gram - Pro Max</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; margin: 0; background: #fafafa; padding-bottom: 70px; }
-        .header { background: white; border-bottom: 1px solid #dbdbdb; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; font-weight: bold; font-style: italic; font-size: 22px; z-index: 100; }
-        .section { display: none; }
+        body { font-family: -apple-system, sans-serif; margin: 0; background: #fafafa; overflow-x: hidden; }
+        .header { background: white; border-bottom: 1px solid #dbdbdb; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; font-weight: bold; font-style: italic; font-size: 22px; }
+        .section { display: none; padding-bottom: 70px; }
         .active { display: block; }
-        .post-card { background: white; border-bottom: 1px solid #dbdbdb; margin-bottom: 15px; }
-        .post-user { padding: 10px; font-weight: 600; font-size: 14px; }
-        .post-img, .reel-vid { width: 100%; display: block; }
-        .reel-vid { height: 80vh; object-fit: cover; background: #000; }
-        .profile-header { padding: 20px; text-align: center; border-bottom: 1px solid #dbdbdb; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+
+        /* Reels Swipe System */
+        #reels-sec { background: black; height: 90vh; overflow-y: scroll; scroll-snap-type: y mandatory; }
+        .reel-container { height: 90vh; width: 100%; scroll-snap-align: start; position: relative; background: #000; }
+        .reel-vid { width: 100%; height: 100%; object-fit: cover; }
+        .reel-overlay { position: absolute; bottom: 20px; left: 15px; color: white; text-shadow: 1px 1px 5px rgba(0,0,0,0.8); }
+
+        /* Profile Styles */
+        .profile-info { padding: 20px; text-align: center; border-bottom: 1px solid #dbdbdb; background: white; }
+        .profile-dp { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid #0095f6; margin-bottom: 10px; }
+        .edit-btn { background: #efefef; border: none; padding: 5px 20px; border-radius: 5px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: white; }
         .grid img { width: 100%; aspect-ratio: 1/1; object-fit: cover; }
+
+        /* Footer Nav */
         .footer { background: white; border-top: 1px solid #dbdbdb; position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 15px 0; font-size: 24px; z-index: 200; }
+        
+        /* Modal */
+        #edit-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:500; padding:20px; box-sizing:border-box; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #dbdbdb; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <div class="header">Instagram</div>
+    <div class="header">Instagram <span onclick="auth.signOut().then(()=>location.reload())" style="font-size:16px; font-style:normal; color:#0095f6;">Logout</span></div>
 
     <div id="feed-sec" class="section active"></div>
-
-    <div id="search-sec" class="section" style="padding:15px;">
-        <input type="text" placeholder="Search friends..." style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
-        <p style="color:gray; text-align:center;">Search feature coming soon!</p>
-    </div>
 
     <div id="reels-sec" class="section"></div>
 
     <div id="profile-sec" class="section">
-        <div class="profile-header">
-            <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" style="width:80px; height:80px; border-radius:50%; background:#eee;">
-            <h3 id="profile-name">My Profile</h3>
-            <p id="profile-email" style="color:gray; font-size:14px;"></p>
+        <div class="profile-info">
+            <img id="p-dp" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="profile-dp">
+            <h3 id="p-name" style="margin:5px 0;">My Name</h3>
+            <p id="p-bio" style="color:gray; font-size:14px; margin:5px 0;">No bio yet</p>
+            <button class="edit-btn" onclick="openModal()">Edit Profile</button>
         </div>
-        <div id="profile-grid" class="grid"></div>
+        <div id="p-grid" class="grid"></div>
+    </div>
+
+    <div id="edit-modal">
+        <h2 style="text-align:center">Edit Profile</h2>
+        <input type="text" id="in-name" placeholder="Display Name">
+        <input type="text" id="in-bio" placeholder="Bio">
+        <input type="text" id="in-dp" placeholder="Profile Photo URL">
+        <button onclick="saveProfile()" style="width:100%; padding:12px; background:#0095f6; color:white; border:none; border-radius:5px; font-weight:bold;">Save Changes</button>
+        <button onclick="closeModal()" style="width:100%; margin-top:10px; background:none; border:none; color:gray;">Cancel</button>
     </div>
 
     <div class="footer">
         <span onclick="show('feed')">🏠</span>
-        <span onclick="show('search')">🔍</span>
         <span onclick="upload()">➕</span>
         <span onclick="show('reels')">🎬</span>
         <span onclick="show('profile')">👤</span>
@@ -64,70 +80,90 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // Section Switcher
+        let myData = { name: "User", bio: "", dp: "" };
+
+        auth.onAuthStateChanged(async user => {
+            if (user) {
+                const doc = await db.collection("users").doc(user.uid).get();
+                if(doc.exists) myData = doc.data();
+                show('feed');
+            } else {
+                const e = prompt("Email:"); const p = prompt("Password:");
+                auth.signInWithEmailAndPassword(e,p).catch(()=>alert("Login fail"));
+            }
+        });
+
         function show(id) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById(id + '-sec').classList.add('active');
             if(id === 'feed') loadPosts('photo', 'feed-sec');
-            if(id === 'reels') loadPosts('reel', 'reels-sec');
-            if(id === 'profile') loadMyPosts();
+            if(id === 'reels') loadReels();
+            if(id === 'profile') loadProfile();
         }
 
-        // Load Posts
-        function loadPosts(type, targetId) {
+        function loadPosts(type, divId) {
             db.collection("posts").where("type", "==", type).onSnapshot(snap => {
-                let html = "";
+                let h = "";
                 snap.forEach(doc => {
                     const d = doc.data();
-                    if(type === 'photo') {
-                        html += `<div class="post-card"><div class="post-user">@${d.username}</div><img src="${d.url}" class="post-img"></div>`;
-                    } else {
-                        html += `<div class="post-card"><video src="${d.url}" class="reel-vid" controls autoplay loop muted></video></div>`;
-                    }
+                    h += `<div style="background:white; border-bottom:1px solid #dbdbdb;"><div style="padding:10px; font-weight:600;">@${d.username}</div><img src="${d.url}" style="width:100%"></div>`;
                 });
-                document.getElementById(targetId).innerHTML = html || "<p style='text-align:center; padding:20px;'>Nothing here yet.</p>";
+                document.getElementById(divId).innerHTML = h || "<p style='text-align:center'>Empty</p>";
             });
         }
 
-        // Load Profile Grid
-        function loadMyPosts() {
-            const user = auth.currentUser;
-            if(!user) return;
-            document.getElementById('profile-email').innerText = user.email;
-            
-            db.collection("posts").where("uid", "==", user.uid).get().then(snap => {
-                let gridHtml = "";
+        function loadReels() {
+            db.collection("posts").where("type", "==", "reel").onSnapshot(snap => {
+                let h = "";
                 snap.forEach(doc => {
-                    gridHtml += `<img src="${doc.data().url}">`;
+                    const d = doc.data();
+                    h += `<div class="reel-container"><video src="${d.url}" class="reel-vid" loop autoplay muted playsinline onclick="this.paused ? this.play() : this.pause()"></video><div class="reel-overlay"><b>@${d.username}</b></div></div>`;
                 });
-                document.getElementById('profile-grid').innerHTML = gridHtml || "<p style='padding:20px;'>No posts yet</p>";
+                document.getElementById('reels-sec').innerHTML = h || "<p style='color:white; text-align:center'>No Reels</p>";
             });
         }
 
-        // Upload
+        function loadProfile() {
+            document.getElementById('p-name').innerText = myData.name;
+            document.getElementById('p-bio').innerText = myData.bio || "No bio";
+            document.getElementById('p-dp').src = myData.dp || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+            db.collection("posts").where("uid", "==", auth.currentUser.uid).get().then(snap => {
+                let gh = "";
+                snap.forEach(doc => { gh += `<img src="${doc.data().url}">`; });
+                document.getElementById('p-grid').innerHTML = gh || "<p style='padding:20px'>No posts</p>";
+            });
+        }
+
+        function openModal() {
+            document.getElementById('in-name').value = myData.name;
+            document.getElementById('in-bio').value = myData.bio;
+            document.getElementById('in-dp').value = myData.dp;
+            document.getElementById('edit-modal').style.display = 'block';
+        }
+        function closeModal() { document.getElementById('edit-modal').style.display = 'none'; }
+
+        async function saveProfile() {
+            const uid = auth.currentUser.uid;
+            myData = {
+                name: document.getElementById('in-name').value || "User",
+                bio: document.getElementById('in-bio').value || "",
+                dp: document.getElementById('in-dp').value || ""
+            };
+            await db.collection("users").doc(uid).set(myData);
+            alert("Profile Updated!");
+            closeModal(); loadProfile();
+        }
+
         function upload() {
-            const type = confirm("Reel upload karni hai? (Cancel for Photo)") ? "reel" : "photo";
-            const url = prompt("Paste URL:");
-            if(url && auth.currentUser) {
+            const t = confirm("Reel? (Cancel for Photo)") ? "reel" : "photo";
+            const u = prompt("Paste URL:");
+            if(u) {
                 db.collection("posts").add({
-                    url: url,
-                    type: type,
-                    uid: auth.currentUser.uid,
-                    username: auth.currentUser.email.split('@')[0],
-                    time: Date.now()
+                    url: u, type: t, uid: auth.currentUser.uid,
+                    username: myData.name, time: Date.now()
                 }).then(() => alert("Uploaded!"));
             }
         }
-
-        // Check Login and Start
-        auth.onAuthStateChanged(user => {
-            if (user) show('feed');
-            else {
-                const e = prompt("Email:");
-                const p = prompt("Password:");
-                auth.signInWithEmailAndPassword(e,p).catch(() => alert("Login error"));
-            }
-        });
     </script>
 </body>
 </html>
