@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Tanish Gram - Likes & Comments</title>
+    <title>Tanish Gram - Stories Update</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
@@ -9,42 +9,45 @@
     <style>
         body { font-family: -apple-system, sans-serif; margin: 0; background: #fafafa; padding-bottom: 70px; }
         .header { background: white; border-bottom: 1px solid #dbdbdb; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; font-weight: bold; font-style: italic; font-size: 22px; }
-        .section { display: none; min-height: 100vh; }
-        .active { display: block; }
         
-        /* Post Styling */
-        .post-card { background: white; border-bottom: 1px solid #dbdbdb; margin-bottom: 15px; }
-        .post-header { padding: 10px; font-weight: 600; font-size: 14px; display: flex; align-items: center; }
-        .post-img-wrap { position: relative; width: 100%; cursor: pointer; }
-        .big-heart { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); font-size: 80px; color: white; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 10; }
-        .big-heart.animate { transform: translate(-50%, -50%) scale(1.2); opacity: 0.9; }
-        
-        /* Actions & Comments */
-        .actions { padding: 10px; font-size: 20px; display: flex; gap: 15px; }
-        .comment-item { font-size: 13px; margin: 3px 0; padding: 0 10px; }
-        .comment-input { width: 90%; border: none; padding: 10px; border-top: 1px solid #eee; outline: none; }
+        /* Story Bar Style */
+        .story-bar { display: flex; overflow-x: auto; padding: 10px; background: white; border-bottom: 1px solid #dbdbdb; gap: 15px; scrollbar-width: none; }
+        .story-item { text-align: center; flex-shrink: 0; cursor: pointer; }
+        .story-circle { width: 60px; height: 60px; border-radius: 50%; border: 3px solid #f09433; padding: 2px; object-fit: cover; background: white; }
+        .story-name { font-size: 11px; margin-top: 4px; color: #262626; }
 
-        /* Footer */
+        /* Full Screen Story Overlay */
+        #story-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:1000; text-align:center; }
+        .story-img { width: 100%; height: 100%; object-fit: contain; }
+        .story-progress { position:absolute; top:10px; left:5%; width:90%; height:2px; background:rgba(255,255,255,0.3); }
+        .progress-fill { height:100%; background:white; width:0%; transition: width linear; }
+
+        /* General Styles */
         .footer { background: white; border-top: 1px solid #dbdbdb; position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 15px 0; font-size: 24px; z-index: 200; }
-        .p-dp { width: 32px; height: 32px; border-radius: 50%; margin-right: 10px; background: #eee; object-fit: cover; }
+        .section { display: none; }
+        .active { display: block; }
     </style>
 </head>
 <body>
 
-    <div class="header">Instagram <span onclick="location.reload()" style="font-size:16px; font-style:normal;">🔄</span></div>
+    <div class="header">Instagram <span onclick="addStory()" style="font-size:24px; font-style:normal;">📸</span></div>
 
-    <div id="feed-sec" class="section active"></div>
-    <div id="reels-sec" class="section"></div>
-    <div id="profile-sec" class="section" style="text-align:center; padding:20px;">
-        <h3 id="my-name">User</h3>
-        <div id="my-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:2px;"></div>
+    <div id="story-overlay" onclick="closeStory()">
+        <div class="story-progress"><div id="p-fill" class="progress-fill"></div></div>
+        <img id="s-img" class="story-img">
+    </div>
+
+    <div id="feed-sec" class="section active">
+        <div class="story-bar" id="story-list">
+            </div>
+        <div id="posts-list"></div>
     </div>
 
     <div class="footer">
         <span onclick="show('feed')">🏠</span>
         <span onclick="upload()">➕</span>
-        <span onclick="show('reels')">🎬</span>
-        <span onclick="show('profile')">👤</span>
+        <span onclick="alert('Reels Working!')">🎬</span>
+        <span onclick="location.reload()">👤</span>
     </div>
 
     <script>
@@ -60,96 +63,85 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        let userData = { name: "User" };
-        let tapTime = 0;
+        let userData = { name: "User", dp: "" };
 
         auth.onAuthStateChanged(async user => {
             if (user) {
                 const doc = await db.collection("users").doc(user.uid).get();
                 if(doc.exists) userData = doc.data();
-                show('feed');
-            } else {
-                let e = prompt("Email:"); let p = prompt("Password:");
-                auth.signInWithEmailAndPassword(e,p).catch(()=>location.reload());
+                loadStories();
+                loadFeed();
             }
         });
 
-        function show(id) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.getElementById(id + '-sec').classList.add('active');
-            if(id === 'feed') loadFeed();
-        }
-
-        // --- LIKE LOGIC ---
-        async function doLike(id, currentLikes, el) {
-            const now = Date.now();
-            if(now - tapTime < 300) {
-                const heart = el.querySelector('.big-heart');
-                heart.classList.add('animate');
-                setTimeout(() => heart.classList.remove('animate'), 600);
-                
-                await db.collection("posts").doc(id).update({
-                    likes: firebase.firestore.FieldValue.increment(1)
-                });
-            }
-            tapTime = now;
-        }
-
-        // --- COMMENT LOGIC ---
-        async function addComment(postId) {
-            const txt = prompt("Write your comment:");
-            if(txt) {
-                await db.collection("posts").doc(postId).collection("comments").add({
-                    user: userData.name || "Anonymous",
-                    text: txt,
+        // --- STORY LOGIC ---
+        function addStory() {
+            const url = prompt("Paste Story Image URL:");
+            if(url) {
+                db.collection("stories").add({
+                    url: url,
+                    uid: auth.currentUser.uid,
+                    username: userData.name || "User",
+                    dp: userData.dp || "https://cdn-icons-png.flaticon.com/512/149/149071.png",
                     time: Date.now()
-                });
-                alert("Comment added!");
+                }).then(() => alert("Story Added!"));
             }
         }
 
+        function loadStories() {
+            const yesterday = Date.now() - (24 * 60 * 60 * 1000);
+            db.collection("stories").where("time", ">", yesterday).onSnapshot(snap => {
+                let html = "";
+                snap.forEach(doc => {
+                    const s = doc.data();
+                    html += `
+                        <div class="story-item" onclick="viewStory('${s.url}')">
+                            <img src="${s.dp}" class="story-circle">
+                            <div class="story-name">${s.username}</div>
+                        </div>`;
+                });
+                document.getElementById('story-list').innerHTML = html || "<p style='font-size:12px; color:gray;'>No Stories</p>";
+            });
+        }
+
+        let storyTimer;
+        function viewStory(url) {
+            const overlay = document.getElementById('story-overlay');
+            const img = document.getElementById('s-img');
+            const fill = document.getElementById('p-fill');
+            
+            img.src = url;
+            overlay.style.display = 'block';
+            fill.style.width = '0%';
+            
+            setTimeout(() => fill.style.width = '100%', 100);
+            storyTimer = setTimeout(closeStory, 5000); // 5 Seconds story
+        }
+
+        function closeStory() {
+            document.getElementById('story-overlay').style.display = 'none';
+            clearTimeout(storyTimer);
+        }
+
+        // --- FEED LOGIC (Same as before) ---
         function loadFeed() {
             db.collection("posts").where("type","==","photo").orderBy("time","desc").onSnapshot(snap => {
                 let h = "";
                 snap.forEach(doc => {
                     const d = doc.data();
-                    const pid = doc.id;
-                    h += `<div class="post-card">
-                        <div class="post-header">@${d.username}</div>
-                        <div class="post-img-wrap" onclick="doLike('${pid}', ${d.likes || 0}, this)">
-                            <div class="big-heart">❤️</div>
-                            <img src="${d.url}" style="width:100%">
-                        </div>
-                        <div class="actions">
-                            <span onclick="alert('Double tap image to like!')">❤️</span>
-                            <span onclick="addComment('${pid}')">💬</span>
-                        </div>
-                        <div style="padding:0 10px;"><b>${d.likes || 0} likes</b></div>
-                        <div id="comments-${pid}" style="padding-bottom:10px;"></div>
+                    h += `<div style="background:white; border-bottom:1px solid #ddd; margin-bottom:10px;">
+                        <div style="padding:10px; font-weight:bold;">@${d.username}</div>
+                        <img src="${d.url}" style="width:100%">
                     </div>`;
-                    loadComments(pid);
                 });
-                document.getElementById('feed-sec').innerHTML = h;
-            });
-        }
-
-        function loadComments(pid) {
-            db.collection("posts").doc(pid).collection("comments").orderBy("time","asc").onSnapshot(snap => {
-                let ch = "";
-                snap.forEach(doc => {
-                    const c = doc.data();
-                    ch += `<div class="comment-item"><b>${c.user}</b> ${c.text}</div>`;
-                });
-                const cDiv = document.getElementById(`comments-${pid}`);
-                if(cDiv) cDiv.innerHTML = ch;
+                document.getElementById('posts-list').innerHTML = h;
             });
         }
 
         function upload() {
-            const t = confirm("Reel? (Cancel for Photo)") ? "reel" : "photo";
-            const u = prompt("URL:");
-            if(u) db.collection("posts").add({
-                url: u, type: t, uid: auth.currentUser.uid, username: userData.name, likes: 0, time: Date.now()
+            const url = prompt("Photo URL:");
+            if(url) db.collection("posts").add({
+                url: url, type: "photo", uid: auth.currentUser.uid, username: userData.name, time: Date.now()
             });
         }
     </script>
