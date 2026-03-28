@@ -93,15 +93,29 @@
     </div>
 
     <div id="admin-scr" class="screen">
-        <div class="header"><span onclick="closeScreen('admin-scr')">←</span><b>Admin Control</b><span></span></div>
-        <div style="padding:20px; text-align:center;">
-            <h3 style="color:var(--gold);">Add/Subtract Balance</h3>
+    <div class="header">
+        <span onclick="closeScreen('admin-scr')" style="font-size:25px;">←</span>
+        <b>Admin Control 🛡️</b>
+        <span></span>
+    </div>
+    <div style="padding:15px; text-align:center;">
+        
+        <div style="background:#1c2127; padding:15px; border-radius:10px; margin-bottom:20px; border:1px solid #333;">
+            <h4 style="color:gold; margin-top:0;">Manual Add Money</h4>
             <input type="number" id="adm-ph" placeholder="User Phone">
             <input type="number" id="adm-amt" placeholder="Amount (e.g. 500)">
-            <button class="btn-main" onclick="updateUserBal()">Update Money</button>
-            <p id="adm-status"></p>
+            <button class="btn-main" onclick="updateUserBal()">Update Balance</button>
+        </div>
+
+        <hr style="border:0.5px solid #333; margin:20px 0;">
+
+        <h4 style="color:gold;">Pending Deposits (User Requests)</h4>
+        <div id="deposit-list" style="text-align:left; font-size:13px;">
+            <p style="color:gray; text-align:center;">No requests yet...</p>
         </div>
     </div>
+</div>
+
 
     <script>
         // FIREBASE CONFIG
