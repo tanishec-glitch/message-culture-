@@ -3,79 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WinCash Pro</title>
+    <title>WinCash Pro - Dashboard</title>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js"></script>
     <style>
-        :root { --gold: #ffd700; --bg: #0f172a; --card: #1e293b; --accent: #38bdf8; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; overflow-x: hidden; }
+        :root { --gold: #ffd700; --bg: #0b0e11; --card: #1c2127; --text: #e9edef; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); -webkit-user-select: none; }
         
-        /* Navbar */
-        .nav { background: var(--card); padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 100; }
-        .wallet { background: #334155; padding: 6px 12px; border-radius: 20px; border: 1px solid var(--gold); font-weight: bold; color: var(--gold); }
+        /* Header & Wallet */
+        .header { background: #1c2127; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 100; }
+        .wallet-btn { background: linear-gradient(90deg, #f39c12, #f1c40f); color: #000; padding: 6px 15px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 5px; cursor: pointer; border: none; }
 
-        /* Screens */
-        .screen { display: none; padding: 20px; animation: fadeIn 0.3s; }
-        .active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* Banner Slider (Static for now) */
+        .banner { margin: 15px; height: 120px; background: linear-gradient(45deg, #1e3a8a, #3b82f6); border-radius: 12px; display: flex; align-items: center; justify-content: center; text-align: center; border: 1px solid #444; }
 
-        /* Cards */
-        .card { background: var(--card); padding: 25px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 1px solid #334155; }
-        .btn { background: var(--gold); color: #000; border: none; padding: 14px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; }
-        .btn-outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 10px; border-radius: 8px; width: 100%; margin-top: 10px; }
+        /* Game Grid */
+        .section-title { padding: 0 15px; font-size: 18px; font-weight: bold; color: var(--gold); margin-bottom: 10px; }
+        .game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 15px 80px 15px; }
+        .game-card { background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid #333; position: relative; transition: 0.2s; }
+        .game-card:active { transform: scale(0.95); }
+        .game-img { width: 100%; height: 100px; background: #2c343f; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+        .game-info { padding: 10px; text-align: center; font-weight: bold; font-size: 14px; }
+        .tag { position: absolute; top: 5px; right: 5px; background: #e74c3c; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
 
-        /* Quiz Options */
-        .opt { display: block; width: 100%; background: #334155; color: white; border: 1px solid #475569; padding: 15px; margin: 10px 0; border-radius: 10px; text-align: left; font-size: 16px; }
-        
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #1c2127; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: #888; cursor: pointer; }
+        .nav-item.active { color: var(--gold); }
+
+        /* Overlay for screens */
+        .screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 200; overflow-y: auto; }
+        .screen.active { display: block; }
     </style>
 </head>
 <body>
 
-    <div id="nav-bar" class="nav" style="display:none;">
-        <b style="font-size: 20px;">WinCash 🏆</b>
-        <div class="wallet">₹<span id="bal">0</span></div>
-    </div>
+    <div id="dashboard">
+        <div class="header">
+            <div style="font-weight: bold; font-size: 20px; font-style: italic;">WinCash🏆</div>
+            <button class="wallet-btn" onclick="openScreen('wallet-screen')">
+                <span>🪙</span> <span id="main-bal">0.00</span>
+            </button>
+        </div>
 
-    <div id="login-scr" class="screen active">
-        <div style="margin-top: 80px;">
-            <h1 style="font-size: 40px; color: var(--gold);">WinCash</h1>
-            <p>Kheliye, Jeetiye aur Withdraw kijiye!</p>
-            <div class="card">
-                <input type="email" id="email" placeholder="Email Address">
-                <input type="password" id="pass" placeholder="Password (6+ chars)">
-                <button class="btn" onclick="authNow('login')">Login</button>
-                <button class="btn-outline" onclick="authNow('reg')">Create New Account</button>
+        <div class="banner">
+            <div>
+                <h3 style="margin:0;">Joining Bonus ₹50! 🎁</h3>
+                <p style="font-size: 12px; margin: 5px 0 0;">Add ₹100 & Get ₹20 Extra</p>
             </div>
         </div>
+
+        <div class="section-title">All Games</div>
+        <div class="game-grid">
+            <div class="game-card" onclick="play('Snakes & Ladders')">
+                <div class="tag">PvP</div>
+                <div class="game-img">🐍</div>
+                <div class="game-info">Snakes & Ladders</div>
+            </div>
+            <div class="game-card" onclick="play('Dragon vs Tiger')">
+                <div class="tag" style="background:#f39c12">Hot</div>
+                <div class="game-img">🐉</div>
+                <div class="game-info">Dragon vs Tiger</div>
+            </div>
+            <div class="game-card" onclick="play('Andar Bahar')">
+                <div class="game-img">🃏</div>
+                <div class="game-info">Andar Bahar</div>
+            </div>
+            <div class="game-card" onclick="play('Spin the Wheel')">
+                <div class="game-img">🎡</div>
+                <div class="game-info">Spin the Wheel</div>
+            </div>
+            <div class="game-card" onclick="play('Ludo')">
+                <div class="game-img">🎲</div>
+                <div class="game-info">Ludo King</div>
+            </div>
+            <div class="game-card" onclick="play('Crash')">
+                <div class="game-img">🚀</div>
+                <div class="game-info">Crash Game</div>
+            </div>
+        </div>
+
+        <div class="bottom-nav">
+            <div class="nav-item active">🏠<br>Home</div>
+            <div class="nav-item" onclick="openScreen('earn-screen')">🔗<br>Refer</div>
+            <div class="nav-item" onclick="openScreen('wallet-screen')">💸<br>Wallet</div>
+            <div class="nav-item" onclick="auth.signOut()">👤<br>Logout</div>
+        </div>
     </div>
 
-    <div id="home-scr" class="screen">
-        <div class="card">
-            <h2 style="margin-top:0;">Math Challenge ⚡</h2>
-            <p style="color: #94a3b8;">Entry Fee: <b>₹10</b> | Prize: <b style="color:#22c55e;">₹20</b></p>
-            <button class="btn" onclick="startPlay()">Pay ₹10 & Play</button>
+    <div id="wallet-screen" class="screen">
+        <div class="header">
+            <span onclick="closeScreen('wallet-screen')" style="font-size: 24px;">←</span>
+            <b>Wallet & Payments</b>
+            <span></span>
         </div>
-        
-        <div class="card" style="border-color: #ef4444;">
-            <h3>Withdraw Winnings 💸</h3>
-            <input type="text" id="upi" placeholder="Your UPI ID (name@apl)">
-            <input type="number" id="amt" placeholder="Amount (Min ₹50)">
-            <button class="btn" style="background:#ef4444; color:white;" onclick="withdraw()">Withdraw to UPI</button>
-        </div>
-        <button class="btn-outline" onclick="addMoneyDemo()">+ Add Demo Cash (Test)</button>
-    </div>
-
-    <div id="game-scr" class="screen">
-        <div class="card">
-            <h2 id="q-text">Loading...</h2>
-            <div id="q-opts"></div>
+        <div style="padding: 20px; text-align: center;">
+            <p>Available Balance</p>
+            <h1 style="color:var(--gold); font-size: 40px;">₹<span id="screen-bal">0</span></h1>
+            <button style="width:100%; padding:15px; background:#27ae60; border:none; color:white; border-radius:10px; font-weight:bold; margin-bottom:10px;">ADD CASH (Min ₹100)</button>
+            <button style="width:100%; padding:15px; background:#e74c3c; border:none; color:white; border-radius:10px; font-weight:bold;">WITHDRAW (Min ₹200)</button>
         </div>
     </div>
 
     <script>
-        // --- FIREBASE CONFIG ---
+        // CONFIG (Same as before)
         const firebaseConfig = {
             apiKey: "AIzaSyDEEypOjcHmWga-U2Lw-xshTwXYKYzJp04",
             authDomain: "my-insta-backend.firebaseapp.com",
@@ -88,90 +120,35 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        let wallet = 0;
-        let me = null;
-
-        // --- AUTH ---
-        function authNow(type) {
-            const e = document.getElementById('email').value, p = document.getElementById('pass').value;
-            if(!e || !p) return alert("Details bharo!");
-            if(type === 'reg') {
-                auth.createUserWithEmailAndPassword(e, p).then(u => {
-                    db.collection("wallets").doc(u.user.uid).set({ balance: 20 });
-                    alert("Account Created! ₹20 Bonus Added.");
-                }).catch(err => alert(err.message));
-            } else {
-                auth.signInWithEmailAndPassword(e, p).catch(err => alert(err.message));
-            }
-        }
-
+        // Check Auth
         auth.onAuthStateChanged(user => {
             if (user) {
-                me = user;
-                document.getElementById('login-scr').classList.remove('active');
-                document.getElementById('nav-bar').style.display = 'flex';
-                showScreen('home-scr');
-                loadWallet();
+                loadWallet(user.uid);
             } else {
-                document.getElementById('login-scr').classList.add('active');
-                document.getElementById('nav-bar').style.display = 'none';
+                // For testing, if not logged in, show a simple prompt
+                let email = prompt("Testing Email:");
+                let pass = prompt("Testing Password (6 chars):");
+                auth.signInWithEmailAndPassword(email, pass).catch(() => {
+                    auth.createUserWithEmailAndPassword(email, pass).then(u => {
+                        db.collection("wallets").doc(u.user.uid).set({ balance: 50 });
+                    });
+                });
             }
         });
 
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
-
-        function loadWallet() {
-            db.collection("wallets").doc(me.uid).onSnapshot(doc => {
-                wallet = doc.data().balance;
-                document.getElementById('bal').innerText = wallet;
+        function loadWallet(uid) {
+            db.collection("wallets").doc(uid).onSnapshot(doc => {
+                const bal = doc.data().balance || 0;
+                document.getElementById('main-bal').innerText = bal.toFixed(2);
+                document.getElementById('screen-bal').innerText = bal.toFixed(2);
             });
         }
 
-        // --- GAME LOGIC ---
-        function startPlay() {
-            if(wallet < 10) return alert("Wallet khali hai! Demo cash add karo.");
-            db.collection("wallets").doc(me.uid).update({ balance: wallet - 10 }).then(() => {
-                showScreen('game-scr');
-                generateQ();
-            });
-        }
+        function openScreen(id) { document.getElementById(id).classList.add('active'); }
+        function closeScreen(id) { document.getElementById(id).classList.remove('active'); }
 
-        function generateQ() {
-            const n1 = Math.floor(Math.random()*30), n2 = Math.floor(Math.random()*30);
-            const ans = n1 + n2;
-            document.getElementById('q-text').innerText = `${n1} + ${n2} = ?`;
-            let opts = [ans, ans+5, ans-2, ans+10].sort(() => Math.random() - 0.5);
-            let h = "";
-            opts.forEach(o => h += `<button class="opt" onclick="check(${o},${ans})">${o}</button>`);
-            document.getElementById('q-opts').innerHTML = h;
-        }
-
-        function check(sel, cor) {
-            if(sel === cor) {
-                alert("Winner! ₹20 Jeet Gaye 🏆");
-                db.collection("wallets").doc(me.uid).update({ balance: wallet + 20 });
-            } else { alert("Wrong! ₹10 Haar Gaye ❌"); }
-            showScreen('home-scr');
-        }
-
-        // --- WITHDRAW & ADD ---
-        function addMoneyDemo() { db.collection("wallets").doc(me.uid).update({ balance: wallet + 100 }); }
-
-        function withdraw() {
-            const upi = document.getElementById('upi').value;
-            const amt = parseInt(document.getElementById('amt').value);
-            if(!upi.includes('@')) return alert("Sahi UPI ID dalo");
-            if(amt < 50 || amt > wallet) return alert("Invalid Amount (Min ₹50)");
-
-            db.collection("withdrawals").add({
-                uid: me.uid, email: me.email, upi: upi, amount: amt, status: "Pending", time: Date.now()
-            }).then(() => {
-                db.collection("wallets").doc(me.uid).update({ balance: wallet - amt });
-                alert("Withdraw Request Sent! 24 Hours wait karein.");
-            });
+        function play(name) {
+            alert("Starting " + name + "... (Game logic coming soon)");
         }
     </script>
 </body>
