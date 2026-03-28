@@ -1,53 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Tanish Gram - Profile Pro</title>
+    <title>Tanish Gram Pro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js"></script>
     <style>
         body { font-family: -apple-system, sans-serif; margin: 0; background: #fafafa; padding-bottom: 80px; }
-        .header { background: white; border-bottom: 1px solid #dbdbdb; padding: 12px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-        .insta-logo { font-style: italic; font-size: 24px; font-weight: bold; }
-        .post { background: white; border: 1px solid #dbdbdb; margin: 15px auto; max-width: 470px; }
-        .post-header { padding: 10px; display: flex; align-items: center; font-weight: 600; }
-        .dp-small { width: 32px; height: 32px; border-radius: 50%; margin-right: 10px; object-fit: cover; background: #eee; }
-        .post-img { width: 100%; display: block; }
-        
-        /* Edit Profile Modal */
-        #profile-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:500; padding:20px; box-sizing:border-box; }
-        .input-group { margin-bottom: 15px; }
-        input { width: 100%; padding: 10px; border: 1px solid #dbdbdb; border-radius: 5px; margin-top: 5px; }
-        
+        .header { background: white; border-bottom: 1px solid #dbdbdb; padding: 12px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; height: 44px; }
+        .post { background: white; border: 1px solid #dbdbdb; margin: 10px auto; max-width: 470px; }
+        .post-header { padding: 10px; display: flex; align-items: center; font-weight: 600; font-size: 14px; }
+        .dp-small { width: 32px; height: 32px; border-radius: 50%; margin-right: 10px; object-fit: cover; background: #dbdbdb; }
+        .post-img { width: 100%; display: block; background: #efefef; min-height: 250px; }
+        .post-info { padding: 12px; }
+        #profile-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:500; padding:20px; box-sizing:border-box; overflow-y: auto; }
+        input { width: 100%; padding: 12px; border: 1px solid #dbdbdb; border-radius: 5px; margin: 10px 0; box-sizing: border-box; }
         .footer-nav { background: white; border-top: 1px solid #dbdbdb; position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 15px 0; font-size: 26px; z-index: 100; }
-        .save-btn { background: #0095f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; width: 100%; }
+        .btn-blue { background: #0095f6; color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; width: 100%; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="profile-modal">
-        <h2 style="text-align:center">Edit Profile</h2>
-        <div class="input-group">
-            <label>Full Name</label>
-            <input type="text" id="edit-name" placeholder="E.g. Tanish Mandloi">
-        </div>
-        <div class="input-group">
-            <label>Bio</label>
-            <input type="text" id="edit-bio" placeholder="E.g. Tech Enthusiast | Photographer">
-        </div>
-        <div class="input-group">
-            <label>Profile Picture URL</label>
-            <input type="text" id="edit-dp" placeholder="Paste image link here">
-        </div>
-        <button class="save-btn" onclick="saveProfile()">Save Changes</button>
-        <button onclick="closeProfile()" style="background:none; border:none; color:red; width:100%; margin-top:10px;">Cancel</button>
+        <h2 style="text-align:center; font-style: italic;">Edit Profile</h2>
+        <input type="text" id="edit-name" placeholder="Full Name">
+        <input type="text" id="edit-bio" placeholder="Bio (e.g. Student | Gamer)">
+        <input type="text" id="edit-dp" placeholder="Profile Picture URL (.jpg link)">
+        <button class="btn-blue" onclick="saveProfile()">Save Changes</button>
+        <button onclick="closeProfile()" style="background:none; border:none; color:grey; width:100%; margin-top:15px;">Close</button>
     </div>
 
     <div id="main-app">
         <div class="header">
-            <div class="insta-logo">Instagram</div>
-            <span onclick="openProfile()" style="font-size: 20px; cursor: pointer;">⚙️</span>
+            <div style="font-style: italic; font-size: 22px; font-weight: bold;">Instagram</div>
+            <span onclick="openProfile()" style="cursor: pointer;">⚙️</span>
         </div>
         <div id="feed"></div>
         <div class="footer-nav">
@@ -70,37 +57,37 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        let myProfile = { name: "User", bio: "", dp: "" };
+        let userData = { name: "User", dp: "https://cdn-icons-png.flaticon.com/512/149/149071.png", bio: "" };
 
-        auth.onAuthStateChanged(user => {
+        auth.onAuthStateChanged(async user => {
             if (user) {
-                loadMyProfile(user.uid);
+                const doc = await db.collection("users").doc(user.uid).get();
+                if (doc.exists) userData = doc.data();
                 loadFeed();
             } else {
-                window.location.href = "index.html";
+                // Agar login nahi hai to ye prompt dikhayega (Temporary fix)
+                let e = prompt("Enter Email:");
+                let p = prompt("Enter Password:");
+                auth.signInWithEmailAndPassword(e,p).catch(()=>alert("Login Required"));
             }
         });
 
-        async function loadMyProfile(uid) {
-            const doc = await db.collection("users").doc(uid).get();
-            if (doc.exists) {
-                myProfile = doc.data();
-            }
+        function openProfile() { 
+            document.getElementById('edit-name').value = userData.name || "";
+            document.getElementById('edit-bio').value = userData.bio || "";
+            document.getElementById('edit-dp').value = userData.dp || "";
+            document.getElementById('profile-modal').style.display = 'block'; 
         }
-
-        function openProfile() { document.getElementById('profile-modal').style.display = 'block'; }
         function closeProfile() { document.getElementById('profile-modal').style.display = 'none'; }
 
         async function saveProfile() {
-            const uid = auth.currentUser.uid;
-            myProfile = {
-                name: document.getElementById('edit-name').value,
-                bio: document.getElementById('edit-bio').value,
-                dp: document.getElementById('edit-dp').value
+            userData = {
+                name: document.getElementById('edit-name').value || "User",
+                bio: document.getElementById('edit-bio').value || "",
+                dp: document.getElementById('edit-dp').value || "https://cdn-icons-png.flaticon.com/512/149/149071.png"
             };
-            await db.collection("users").doc(uid).set(myProfile);
-            alert("Profile Updated!");
-            closeProfile();
+            await db.collection("users").doc(auth.currentUser.uid).set(userData);
+            alert("Profile Saved!");
             location.reload();
         }
 
@@ -112,14 +99,14 @@
                     html += `
                         <div class="post">
                             <div class="post-header">
-                                <img src="${d.userDp || ''}" class="dp-small">
-                                <div>
-                                    <div style="font-size:14px">${d.username}</div>
-                                    <div style="font-size:10px; color:#8e8e8e">${d.bio || ''}</div>
-                                </div>
+                                <img src="${d.userDp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="dp-small">
+                                <div>${d.username || 'Anonymous'}</div>
                             </div>
                             <img src="${d.url}" class="post-img">
-                            <div style="padding:10px"><b>${d.likes || 0} likes</b></div>
+                            <div class="post-info">
+                                <b>${d.likes || 0} likes</b><br>
+                                <span style="font-size:14px"><b>${d.username}</b> ${d.caption || ''}</span>
+                            </div>
                         </div>`;
                 });
                 document.getElementById('feed').innerHTML = html;
@@ -127,13 +114,14 @@
         }
 
         function addNewPost() {
-            const url = prompt("Photo URL:");
+            const url = prompt("Paste Image URL:");
+            const cap = prompt("Write a caption:");
             if (url) {
                 db.collection("posts").add({
                     url: url,
-                    username: myProfile.name || auth.currentUser.email.split('@')[0],
-                    userDp: myProfile.dp || "",
-                    bio: myProfile.bio || "",
+                    caption: cap || "",
+                    username: userData.name,
+                    userDp: userData.dp,
                     likes: 0,
                     time: Date.now()
                 });
