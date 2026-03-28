@@ -239,6 +239,35 @@
                 alert("Balance Updated!");
             });
         }
+// Ye function saari pending deposits ko khinch kar layega
+function loadDeposits() {
+    const listDiv = document.getElementById('deposit-list');
+    
+    // Firebase se 'deposits' check karo jahan status 'Pending' ho
+    db.collection("deposits").where("status", "==", "Pending").onSnapshot(snap => {
+        listDiv.innerHTML = ""; // Purani list saaf karo
+        
+        if(snap.empty) {
+            listDiv.innerHTML = "<p style='text-align:center; color:gray;'>Sab saaf hai! Koi request nahi hai.</p>";
+            return;
+        }
+        
+        snap.forEach(doc => {
+            const d = doc.data();
+            const div = document.createElement('div');
+            div.style = "background:#242b33; padding:12px; border-radius:10px; margin-bottom:10px; border-left:4px solid #ffd700;";
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <b style="color:#ffd700;">📱 ${d.phone || 'User'}</b>
+                    <b style="color:#2ecc71;">₹${d.amount}</b>
+                </div>
+                <div style="font-size:12px; color:#bbb; margin-bottom:8px;">UTR: ${d.utr}</div>
+                <button onclick="approveDeposit('${doc.id}', '${d.uid}', ${d.amount})" style="background:#2ecc71; color:white; border:none; padding:8px; border-radius:5px; width:100%; font-weight:bold; cursor:pointer;">APPROVE ✅</button>
+            `;
+            listDiv.appendChild(div);
+        });
+    });
+}
 
         function openWithdraw() {
             if(wallet < 200) return alert("Minimum ₹200 chahiye!");
