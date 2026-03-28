@@ -1,37 +1,57 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Tanish Instagram Pro</title>
+    <title>Instagram Clone - Login/Register</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
-    
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js"></script>
     <style>
-        body { font-family: sans-serif; margin: 0; background: #fafafa; padding-bottom: 70px; }
-        .header { background: white; border-bottom: 1px solid #dbdbdb; padding: 12px; text-align: center; position: sticky; top: 0; font-style: italic; z-index:100; font-size: 22px;}
+        body { font-family: sans-serif; margin: 0; background: #fafafa; }
+        .auth-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        .auth-box { width: 85%; max-width: 350px; background: white; padding: 25px; border: 1px solid #dbdbdb; text-align: center; border-radius: 8px; }
+        .logo { font-style: italic; font-size: 35px; margin-bottom: 25px; }
+        input { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #dbdbdb; background: #fafafa; border-radius: 5px; box-sizing: border-box; outline: none; }
+        .btn { width: 100%; padding: 12px; background: #0095f6; color: white; border: none; border-radius: 5px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        .toggle-text { margin-top: 20px; font-size: 14px; color: #8e8e8e; cursor: pointer; }
+        .toggle-text b { color: #0095f6; }
+
+        /* Main App Feed (Hidden by default) */
+        #main-app { display: none; padding-bottom: 70px; }
+        .header { background: white; border-bottom: 1px solid #dbdbdb; padding: 12px; text-align: center; position: sticky; top: 0; font-style: italic; font-size: 22px; z-index: 100; }
         .post { background: white; border: 1px solid #dbdbdb; margin: 15px auto; max-width: 450px; }
-        .post-img { width: 100%; display: block; min-height: 200px; background: #eee; }
-        .user-info { padding: 10px; font-weight: bold; }
-        .footer { background: white; border-top: 1px solid #dbdbdb; position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 15px 0; font-size: 26px; z-index:100; }
-        .plus-btn { color: #0095f6; cursor: pointer; font-weight: bold; }
+        .post-img { width: 100%; display: block; }
+        .footer { background: white; border-top: 1px solid #dbdbdb; position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 15px 0; font-size: 26px; }
     </style>
 </head>
 <body>
 
-    <div class="header">Instagram Pro</div>
-    
-    <div id="feed">
-        <p style="text-align:center; padding:50px;">Loading your posts...</p>
+    <div id="auth-screen" class="auth-container">
+        <div class="auth-box">
+            <div class="logo">Instagram</div>
+            <h3 id="auth-title">Create Account</h3>
+            <input type="email" id="email" placeholder="Email address">
+            <input type="password" id="password" placeholder="Password">
+            <button class="btn" id="main-btn" onclick="authProcess()">Sign Up</button>
+            
+            <p class="toggle-text" id="toggle-link" onclick="toggleAuth()">
+                Already have an account? <b>Log In</b>
+            </p>
+        </div>
     </div>
 
-    <div class="footer">
-        <span onclick="location.reload()">🏠</span>
-        <span class="plus-btn" onclick="addNewPost()">➕</span>
-        <span>👤</span>
+    <div id="main-app">
+        <div class="header">Instagram Clone</div>
+        <div id="feed"></div>
+        <div class="footer">
+            <span onclick="location.reload()">🏠</span>
+            <span onclick="addNewPost()" style="color:#0095f6; font-weight:bold;">➕</span>
+            <span onclick="logout()">🚪</span>
+        </div>
     </div>
 
     <script>
-        // AAPKA REAL FIREBASE CONFIG (Updated with your keys)
+        // --- YOUR FIREBASE CONFIG ---
         const firebaseConfig = {
           apiKey: "AIzaSyDEEypOjcHmWga-U2Lw-xshTwXYKYzJp04",
           authDomain: "my-insta-backend.firebaseapp.com",
@@ -40,44 +60,71 @@
           messagingSenderId: "955106968523",
           appId: "1:955106968523:web:4f038e3f139d1f06ba6c4e"
         };
-
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const auth = firebase.auth();
 
-        // 1. DATABASE SE POSTS KHINCHNA
-        db.collection("posts").orderBy("time", "desc").onSnapshot((snapshot) => {
-            const feed = document.getElementById('feed');
-            feed.innerHTML = "";
-            if (snapshot.empty) {
-                feed.innerHTML = "<p style='text-align:center; padding:50px;'>No posts yet. Tap ➕ to post!</p>";
+        let isLoginMode = false;
+
+        // Toggle function (Switch between Sign Up and Login)
+        function toggleAuth() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('auth-title').innerText = isLoginMode ? "Log In" : "Create Account";
+            document.getElementById('main-btn').innerText = isLoginMode ? "Log In" : "Sign Up";
+            document.getElementById('toggle-link').innerHTML = isLoginMode ? 
+                "Don't have an account? <b>Sign Up</b>" : "Already have an account? <b>Log In</b>";
+        }
+
+        // Authentication Process
+        function authProcess() {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+
+            if(!email || !pass) return alert("Email and Password fill karein!");
+
+            if (isLoginMode) {
+                auth.signInWithEmailAndPassword(email, pass).catch(err => alert(err.message));
+            } else {
+                auth.createUserWithEmailAndPassword(email, pass).catch(err => alert(err.message));
             }
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                feed.innerHTML += `
-                    <div class="post">
-                        <div class="user-info">tanishec_glitch</div>
-                        <img src="${data.url}" class="post-img">
-                    </div>`;
-            });
+        }
+
+        // Auth Observer (Keep user logged in)
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                loadFeed();
+            } else {
+                document.getElementById('auth-screen').style.display = 'flex';
+                document.getElementById('main-app').style.display = 'none';
+            }
         });
 
-        // 2. NAYA POST SAVE KARNA
+        function loadFeed() {
+            db.collection("posts").orderBy("time", "desc").onSnapshot(snap => {
+                let html = "";
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    html += `<div class="post"><div style="padding:10px;font-weight:bold;">${d.username}</div><img src="${d.url}" class="post-img"></div>`;
+                });
+                document.getElementById('feed').innerHTML = html;
+            });
+        }
+
         function addNewPost() {
-            const url = prompt("Google se kisi photo ka link copy karke yahan paste karein:");
-            if (url && url.startsWith("http")) {
+            const url = prompt("Paste Photo URL:");
+            if (url) {
                 db.collection("posts").add({
                     url: url,
+                    username: auth.currentUser.email.split('@')[0],
                     time: Date.now()
-                }).then(() => {
-                    console.log("Post saved!");
-                }).catch((error) => {
-                    alert("Error! Shayad Firestore Database 'Test Mode' mein nahi hai.");
-                    console.error(error);
                 });
-            } else if (url) {
-                alert("Please valid image URL daalein (http se shuru hone wala).");
             }
+        }
+
+        function logout() {
+            if(confirm("Logout karna chahte hain?")) auth.signOut();
         }
     </script>
 </body>
