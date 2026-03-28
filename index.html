@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Tanish Gram - Search Friends</title>
+    <title>Tanish Gram - Mega Update</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
@@ -10,50 +10,60 @@
         body { font-family: -apple-system, sans-serif; margin: 0; background: #fafafa; padding-bottom: 70px; }
         .header { background: white; border-bottom: 1px solid #dbdbdb; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
         
-        /* Search Screen Style */
-        #search-page { display:none; padding: 15px; }
-        .search-bar { width: 100%; padding: 10px; border: 1px solid #dbdbdb; border-radius: 8px; background: #efefef; outline: none; margin-bottom: 20px; }
-        .user-result { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; cursor: pointer; }
-        .dp-med { width: 44px; height: 44px; border-radius: 50%; margin-right: 12px; object-fit: cover; background: #eee; }
+        /* Reels Style */
+        .reel-video { width: 100%; height: 80vh; object-fit: cover; background: black; margin-bottom: 10px; }
         
-        /* Profile & Grid Styles */
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-top: 15px; }
-        .grid img { width: 100%; aspect-ratio: 1/1; object-fit: cover; }
+        /* Profile Stats */
+        .stats-box { display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #dbdbdb; margin-top: 10px; }
+        .stat-item { text-align: center; font-size: 14px; }
+        .stat-num { font-weight: bold; font-size: 18px; }
+
+        /* General UI */
+        .post { background: white; border: 1px solid #dbdbdb; margin-bottom: 10px; position: relative; }
+        .delete-btn { position: absolute; right: 10px; top: 10px; color: red; font-weight: bold; background: white; border-radius: 50%; width: 25px; height: 25px; text-align: center; cursor: pointer; border: 1px solid #ddd; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+        .grid img, .grid video { width: 100%; aspect-ratio: 1/1; object-fit: cover; }
+        
         .footer-nav { background: white; border-top: 1px solid #dbdbdb; position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 15px 0; font-size: 26px; z-index: 200; }
-        #main-feed, #profile-page { display: block; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <div id="main-app">
-        <div class="header" id="top-header">
+        <div class="header">
             <div style="font-style: italic; font-size: 22px; font-weight: bold;">Instagram</div>
-            <span onclick="openEditProfile()">⚙️</span>
+            <span onclick="auth.signOut().then(()=>location.reload())">🚪</span>
         </div>
 
-        <div id="search-page">
-            <input type="text" class="search-bar" id="search-input" placeholder="Search friends by name..." oninput="searchUsers()">
-            <div id="search-results"></div>
+        <div id="feed-sec"></div>
+        <div id="reels-sec" class="hidden"></div>
+        <div id="search-sec" class="hidden" style="padding:15px;">
+            <input type="text" id="search-in" placeholder="Search friends..." style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd;" oninput="doSearch()">
+            <div id="search-res"></div>
         </div>
-
-        <div id="main-feed"></div>
-
-        <div id="profile-page" style="display:none; padding: 20px; text-align:center;">
-            <img id="view-dp" src="" style="width:80px; height:80px; border-radius:50%; object-fit:cover;">
-            <h3 id="view-name">User Name</h3>
-            <div id="view-grid" class="grid"></div>
+        
+        <div id="profile-sec" class="hidden" style="padding:20px; text-align:center;">
+            <img id="p-dp" src="" style="width:90px; height:90px; border-radius:50%; object-fit:cover; border: 2px solid #0095f6;">
+            <h3 id="p-name">Username</h3>
+            <div class="stats-box">
+                <div class="stat-item"><span class="stat-num" id="post-count">0</span><br>Posts</div>
+                <div class="stat-item"><span class="stat-num">1.2k</span><br>Followers</div>
+                <div class="stat-item"><span class="stat-num">350</span><br>Following</div>
+            </div>
+            <div id="p-grid" class="grid"></div>
         </div>
 
         <div class="footer-nav">
-            <span onclick="showSection('feed')">🏠</span>
-            <span onclick="showSection('search')">🔍</span>
-            <span onclick="addNewPost()" style="color:#0095f6;">➕</span>
-            <span onclick="showMyProfile()">👤</span>
+            <span onclick="nav('feed')">🏠</span>
+            <span onclick="nav('search')">🔍</span>
+            <span onclick="uploadContent()">➕</span>
+            <span onclick="nav('reels')">🎬</span>
+            <span onclick="nav('profile')">👤</span>
         </div>
     </div>
 
     <script>
-        // --- CONFIG (Keep yours same) ---
         const firebaseConfig = {
             apiKey: "AIzaSyDEEypOjcHmWga-U2Lw-xshTwXYKYzJp04",
             authDomain: "my-insta-backend.firebaseapp.com",
@@ -66,82 +76,83 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        let currentUserData = {};
+        let me = {};
 
         auth.onAuthStateChanged(async user => {
             if (user) {
-                const doc = await db.collection("users").doc(user.uid).get();
-                currentUserData = doc.data() || { name: "User" };
-                showSection('feed');
-            } else { window.location.href="index.html"; }
+                const d = await db.collection("users").doc(user.uid).get();
+                me = d.data() || { name: "User" };
+                nav('feed');
+            } else { location.href="index.html"; }
         });
 
-        // Navigation Switcher
-        function showSection(name) {
-            document.getElementById('main-feed').style.display = name === 'feed' ? 'block' : 'none';
-            document.getElementById('search-page').style.display = name === 'search' ? 'block' : 'none';
-            document.getElementById('profile-page').style.display = name === 'profile' ? 'block' : 'none';
-            if(name === 'feed') loadFeed();
-        }
-
-        // SEARCH LOGIC
-        async function searchUsers() {
-            const query = document.getElementById('search-input').value.toLowerCase();
-            if(!query) { document.getElementById('search-results').innerHTML = ""; return; }
-
-            const snap = await db.collection("users").get(); // Get all users
-            let resultsHtml = "";
-            snap.forEach(doc => {
-                const u = doc.data();
-                if(u.name && u.name.toLowerCase().includes(query)) {
-                    resultsHtml += `
-                        <div class="user-result" onclick="viewUserProfile('${doc.id}', '${u.name}', '${u.dp}')">
-                            <img src="${u.dp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="dp-med">
-                            <b>${u.name}</b>
-                        </div>`;
-                }
-            });
-            document.getElementById('search-results').innerHTML = resultsHtml;
-        }
-
-        // VIEW A FRIEND'S PROFILE
-        async function viewUserProfile(uid, name, dp) {
-            showSection('profile');
-            document.getElementById('view-name').innerText = name;
-            document.getElementById('view-dp').src = dp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-            
-            const snap = await db.collection("posts").where("uid", "==", uid).get();
-            let gridHtml = "";
-            snap.forEach(doc => { gridHtml += `<img src="${doc.data().url}">`; });
-            document.getElementById('view-grid').innerHTML = gridHtml || "<p>No posts yet</p>";
-        }
-
-        function showMyProfile() {
-            viewUserProfile(auth.currentUser.uid, currentUserData.name, currentUserData.dp);
+        function nav(sec) {
+            ["feed-sec", "reels-sec", "search-sec", "profile-sec"].forEach(s => document.getElementById(s).classList.add('hidden'));
+            document.getElementById(sec + "-sec").classList.remove('hidden');
+            if(sec === 'feed') loadFeed();
+            if(sec === 'reels') loadReels();
+            if(sec === 'profile') loadMyProfile();
         }
 
         function loadFeed() {
-            db.collection("posts").orderBy("time", "desc").onSnapshot(snap => {
-                let html = "";
+            db.collection("posts").where("type", "==", "photo").orderBy("time", "desc").onSnapshot(snap => {
+                let h = "";
                 snap.forEach(doc => {
                     const d = doc.data();
-                    html += `
-                        <div style="background:white; border:1px solid #dbdbdb; margin-bottom:10px;">
-                            <div style="padding:10px; font-weight:bold;">@${d.username}</div>
-                            <img src="${d.url}" style="width:100%">
-                        </div>`;
+                    h += `<div class="post">
+                        <div style="padding:10px; font-weight:bold;">@${d.username}</div>
+                        ${d.uid === auth.currentUser.uid ? `<div class="delete-btn" onclick="del('${doc.id}')">×</div>` : ''}
+                        <img src="${d.url}" style="width:100%">
+                    </div>`;
                 });
-                document.getElementById('main-feed').innerHTML = html;
+                document.getElementById('feed-sec').innerHTML = h;
             });
         }
 
-        function addNewPost() {
-            const url = prompt("Photo URL:");
-            if (url) {
+        function loadReels() {
+            db.collection("posts").where("type", "==", "reel").orderBy("time", "desc").onSnapshot(snap => {
+                let h = "";
+                snap.forEach(doc => {
+                    h += `<video src="${doc.data().url}" class="reel-video" controls autoplay loop muted></video>`;
+                });
+                document.getElementById('reels-sec').innerHTML = h || "<p style='text-align:center'>No Reels yet</p>";
+            });
+        }
+
+        async function loadMyProfile() {
+            document.getElementById('p-name').innerText = me.name;
+            document.getElementById('p-dp').src = me.dp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+            const snap = await db.collection("posts").where("uid", "==", auth.currentUser.uid).get();
+            document.getElementById('post-count').innerText = snap.size;
+            let gh = "";
+            snap.forEach(doc => { 
+                if(doc.data().type === 'photo') gh += `<img src="${doc.data().url}">`;
+                else gh += `<video src="${doc.data().url}"></video>`;
+            });
+            document.getElementById('p-grid').innerHTML = gh;
+        }
+
+        function uploadContent() {
+            const type = confirm("Reel upload karni hai? (Cancel for Photo)") ? "reel" : "photo";
+            const url = prompt(type + " URL paste karein:");
+            if(url) {
                 db.collection("posts").add({
-                    url: url, uid: auth.currentUser.uid, username: currentUserData.name, time: Date.now()
+                    url: url, type: type, uid: auth.currentUser.uid, username: me.name, time: Date.now()
                 });
             }
+        }
+
+        function del(id) { if(confirm("Post delete kar dein?")) db.collection("posts").doc(id).delete(); }
+
+        async function doSearch() {
+            const q = document.getElementById('search-in').value.toLowerCase();
+            const snap = await db.collection("users").get();
+            let rh = "";
+            snap.forEach(doc => {
+                const u = doc.data();
+                if(u.name.toLowerCase().includes(q)) rh += `<div style="padding:10px; border-bottom:1px solid #eee;">${u.name}</div>`;
+            });
+            document.getElementById('search-res').innerHTML = rh;
         }
     </script>
 </body>
