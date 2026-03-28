@@ -61,7 +61,8 @@
              <button onclick="auth.signOut()" style="background:none; border:none; color:gray;">Logout Account</button>
         </div>
     </div>
-
+<div style="margin-top: 15px; opacity: 0.1; font-size: 11px; color: gray; text-align: center;" onclick="openAdmin()">Admin Settings</div>
+    
     <div id="dvt-scr" class="screen">
         <div class="header">
             <span onclick="closeDVT()" style="font-size:25px;">←</span>
@@ -89,6 +90,20 @@
             <h1 id="bal-wall" style="font-size:40px; color:var(--gold);">₹0</h1>
             <button class="btn-main" onclick="alert('Min Deposit ₹100')">ADD MONEY</button>
             <button class="btn-main" style="background:var(--red); color:white;" onclick="alert('Min Withdraw ₹200')">WITHDRAW</button>
+        </div>
+    </div>
+    <div id="admin-scr" class="screen" style="background: #111;">
+        <div class="header">
+            <span onclick="closeScreen('admin-scr')" style="font-size: 25px; cursor: pointer;">←</span>
+            <b>Admin Control 🛡️</b>
+            <span></span>
+        </div>
+        <div style="padding:20px; text-align:center;">
+            <h3 style="color:var(--gold);">Update User Balance</h3>
+            <input type="number" id="adm-ph" placeholder="User Mobile Number">
+            <input type="number" id="adm-amt" placeholder="Amount (e.g. 100)">
+            <button class="btn-main" onclick="updateUserBal()">Update Money</button>
+            <p id="adm-status" style="margin-top:10px; color: #2ecc71;"></p>
         </div>
     </div>
 
@@ -169,8 +184,35 @@
                     showWinner();
                 }
             }, 1000);
-        }
+// Line 188 par paste karein
+function openAdmin() {
+    let pass = prompt("Enter Admin Key:");
+    if(pass === "tanish123") { 
+        document.getElementById('admin-scr').classList.add('active'); 
+    } else { 
+        alert("Wrong Key!"); 
+    }
+}
 
+function updateUserBal() {
+    const ph = document.getElementById('adm-ph').value;
+    const amt = parseInt(document.getElementById('adm-amt').value);
+    
+    if(!ph || isNaN(amt)) return alert("Details sahi dalo!");
+
+    db.collection("wallets").where("phone", "==", ph).get().then(snap => {
+        if(snap.empty) return alert("User Nahi Mila!");
+        let uid = snap.docs[0].id;
+        db.collection("wallets").doc(uid).update({
+            balance: firebase.firestore.FieldValue.increment(amt)
+        }).then(() => {
+            alert("Paisa Update Ho Gaya!");
+            document.getElementById('adm-status').innerText = "Done!";
+        });
+    });
+}
+
+            
         function bet(side) {
             if(!canBet) return;
             if(wallet < 10) return alert("Minimum ₹10 chahiye!");
