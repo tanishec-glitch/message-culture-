@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -11,52 +11,32 @@
         :root { --bg: #000; --text: #fff; --border: #262626; --accent: #0095f6; --gray: #8e8e8e; }
         body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--text); overflow-x: hidden; }
         
-        /* Header */
         .header { background: var(--bg); border-bottom: 1px solid var(--border); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; height: 44px; }
         .logo { font-size: 22px; font-weight: bold; font-style: italic; }
         
-        /* Sections */
         .section { display: none; padding-bottom: 60px; min-height: 100vh; }
         .active { display: block; }
 
-        /* Story Bar */
-        .story-bar { display: flex; overflow-x: auto; padding: 12px 5px; gap: 15px; scrollbar-width: none; border-bottom: 1px solid var(--border); }
-        .story-circle { width: 62px; height: 62px; border-radius: 50%; border: 2px solid #fd1d1d; padding: 2px; object-fit: cover; }
-        
-        /* Post Styling */
-        .post { border-bottom: 1px solid var(--border); margin-bottom: 10px; }
-        .post-header { padding: 10px; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; }
-        .post-dp { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
-        .post-img { width: 100%; display: block; }
-        .post-actions { padding: 10px; display: flex; gap: 15px; font-size: 24px; }
-        .likes-text { padding: 0 10px 10px; font-weight: 600; font-size: 14px; }
-
-        /* Profile Page - Like Screenshot */
-        .profile-top { padding: 20px 15px; }
-        .p-stats { display: flex; justify-content: space-around; align-items: center; text-align: center; margin-left: 20px; flex: 1; }
+        /* Profile Style */
+        .profile-top { padding: 20px 15px; display: flex; align-items: center; }
+        .p-stats { display: flex; justify-content: space-around; flex: 1; text-align: center; }
         .stat-num { font-weight: bold; font-size: 18px; }
-        .stat-label { font-size: 13px; color: var(--gray); }
-        .profile-info { padding: 0 15px; font-size: 14px; }
-        .edit-btns { display: flex; gap: 5px; padding: 15px; }
-        .btn { flex: 1; background: var(--border); color: var(--text); border: none; padding: 8px; border-radius: 8px; font-weight: 600; font-size: 14px; }
-        
+        .stat-label { font-size: 12px; color: var(--gray); }
+        .btn-blue { background: var(--accent); color: white; border: none; padding: 8px; border-radius: 8px; font-weight: 600; width: 100%; margin-top: 10px; cursor: pointer; }
+        .btn-gray { background: var(--border); color: white; border: none; padding: 8px; border-radius: 8px; font-weight: 600; flex: 1; cursor: pointer; }
+
         /* Grid */
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
-        .grid-item { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #1a1a1a; }
+        .grid-item { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #1a1a1a; cursor: pointer; }
 
-        /* Footer Navigation */
-        .footer { background: var(--bg); border-top: 1px solid var(--border); position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 12px 0; font-size: 26px; z-index: 200; }
-        
-        /* Chat Styling */
-        .chat-list-item { display: flex; align-items: center; padding: 15px; gap: 12px; border-bottom: 1px solid var(--border); }
-        .msg-box { height: calc(100vh - 120px); overflow-y: auto; padding: 15px; display: flex; flex-direction: column; }
-        .msg { padding: 10px 15px; border-radius: 20px; margin: 4px; max-width: 70%; font-size: 14px; }
+        /* Chat */
+        .msg-box { height: 80vh; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; }
+        .msg { padding: 10px 15px; border-radius: 20px; margin: 4px; max-width: 75%; font-size: 14px; }
         .sent { background: var(--accent); align-self: flex-end; }
         .rec { background: var(--border); align-self: flex-start; }
 
-        /* Animations */
-        .big-heart { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); font-size: 80px; transition: 0.3s; pointer-events: none; opacity: 0; }
-        .animate-heart { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+        .footer { background: var(--bg); border-top: 1px solid var(--border); position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 12px 0; font-size: 26px; z-index: 200; }
+        input { background: #121212; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 5px; width: 90%; margin: 5px 0; }
     </style>
 </head>
 <body>
@@ -64,57 +44,55 @@
     <div class="header">
         <div class="logo">Instagram</div>
         <div style="display:flex; gap:18px;">
-            <span onclick="addStory()">➕</span>
+            <span onclick="show('search')">🔍</span>
             <span onclick="show('chat')">📩</span>
         </div>
     </div>
 
     <div id="feed-sec" class="section active">
-        <div class="story-bar" id="story-list"></div>
         <div id="posts-list"></div>
     </div>
 
-    <div id="reels-sec" class="section" style="background:#000;">
-        <div id="reels-list" style="height:92vh; overflow-y:scroll; scroll-snap-type:y mandatory;"></div>
+    <div id="search-sec" class="section" style="padding:15px;">
+        <input type="text" id="user-search" placeholder="Search friends..." oninput="realTimeSearch(this.value)">
+        <div id="search-results" style="margin-top:20px;"></div>
     </div>
 
     <div id="profile-sec" class="section">
-        <div class="profile-top" style="display:flex;">
-            <img id="p-dp" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" style="width:77px; height:77px; border-radius:50%; object-fit:cover;">
+        <div class="profile-top">
+            <img id="p-dp" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" style="width:80px; height:80px; border-radius:50%; object-fit:cover;">
             <div class="p-stats">
-                <div><div class="stat-num" id="count-posts">0</div><div class="stat-label">posts</div></div>
-                <div><div class="stat-num">267</div><div class="stat-label">followers</div></div>
-                <div><div class="stat-num">258</div><div class="stat-label">following</div></div>
+                <div><div class="stat-num" id="post-count">0</div><div class="stat-label">posts</div></div>
+                <div><div class="stat-num" id="follower-count">0</div><div class="stat-label">followers</div></div>
+                <div><div class="stat-num">0</div><div class="stat-label">following</div></div>
             </div>
         </div>
-        <div class="profile-info">
+        <div style="padding:0 15px;">
             <b id="p-name">Username</b><br>
-            <span id="p-bio" style="color:#fafafa;">Breathe. Believe. Begin. 🌿</span>
+            <span id="p-bio" style="font-size:14px;">Breathe. Believe. Begin. 🌿</span>
+            <div style="display:flex; gap:5px; margin-top:15px;">
+                <button class="btn-gray" onclick="openEditModal()">Edit profile</button>
+                <button class="btn-gray">Share profile</button>
+            </div>
         </div>
-        <div class="edit-btns">
-            <button class="btn" onclick="openEdit()">Edit profile</button>
-            <button class="btn">Share profile</button>
-        </div>
-        <div class="grid" id="p-grid"></div>
+        <div class="grid" id="p-grid" style="margin-top:20px;"></div>
     </div>
 
     <div id="chat-sec" class="section">
-        <h3 style="padding:15px; margin:0;">Messages</h3>
-        <div id="user-list"></div>
+        <div id="chat-list"></div>
     </div>
     <div id="chat-window" class="section">
-        <div class="header"><span onclick="show('chat')">⬅️</span> <b id="chat-title">User</b> <span></span></div>
+        <div class="header"><span onclick="show('chat')">⬅️</span> <b id="chat-title">Chat</b></div>
         <div id="msg-list" class="msg-box"></div>
-        <div style="padding:10px; display:flex; gap:10px; background:#000; border-top:1px solid var(--border);">
-            <input id="msg-in" placeholder="Message..." style="flex:1; background:#262626; border:none; color:#fff; padding:10px; border-radius:20px;">
-            <button onclick="sendMsg()" style="background:none; border:none; color:var(--accent); font-weight:bold;">Send</button>
+        <div style="padding:10px; display:flex; gap:5px;">
+            <input id="m-in" placeholder="Message...">
+            <button onclick="sendMsg()" style="color:var(--accent); border:none; background:none; font-weight:bold;">Send</button>
         </div>
     </div>
 
     <div class="footer">
         <span onclick="show('feed')">🏠</span>
-        <span onclick="show('reels')">🎬</span>
-        <span onclick="uploadContent()">➕</span>
+        <span onclick="upload()">➕</span>
         <span onclick="show('profile')">👤</span>
     </div>
 
@@ -131,14 +109,14 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        let me = { name: "tanish_mandloi._", dp: "", bio: "Breathe. Believe. Begin. 🌿" };
-        let activeUid = "";
-        let lastTap = 0;
+        let me = { name: "User", dp: "", bio: "" };
+        let currentChatUid = "";
 
         auth.onAuthStateChanged(async user => {
             if (user) {
                 const doc = await db.collection("users").doc(user.uid).get();
                 if(doc.exists) me = doc.data();
+                else await db.collection("users").doc(user.uid).set({name: user.email.split('@')[0], dp: "", bio: "", followers: 0});
                 show('feed');
             } else {
                 let e = prompt("Email:"), p = prompt("Password:");
@@ -149,130 +127,81 @@
         function show(id) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById(id + '-sec') ? document.getElementById(id + '-sec').classList.add('active') : document.getElementById(id).classList.add('active');
-            if(id === 'feed') { loadFeed(); loadStories(); }
-            if(id === 'reels') loadReels();
-            if(id === 'profile') loadProfile();
-            if(id === 'chat') loadUsers();
+            if(id === 'feed') loadFeed();
+            if(id === 'profile') loadMyProfile();
+            if(id === 'chat') loadChatUsers();
         }
 
-        // --- FEED & DOUBLE TAP ---
+        // --- REAL-TIME SEARCH ---
+        async function realTimeSearch(val) {
+            if(!val) { document.getElementById('search-results').innerHTML = ""; return; }
+            const snap = await db.collection("users").get();
+            let h = "";
+            snap.forEach(doc => {
+                const u = doc.data();
+                if(u.name.toLowerCase().includes(val.toLowerCase())) {
+                    h += `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="${u.dp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:40px; height:40px; border-radius:50%;">
+                            <b>${u.name}</b>
+                        </div>
+                        <button onclick="followUser('${doc.id}')" style="background:var(--accent); color:white; border:none; padding:5px 15px; border-radius:5px;">Follow</button>
+                    </div>`;
+                }
+            });
+            document.getElementById('search-results').innerHTML = h;
+        }
+
+        async function followUser(uid) {
+            await db.collection("users").doc(uid).update({ followers: firebase.firestore.FieldValue.increment(1) });
+            alert("Following!");
+        }
+
+        // --- PROFILE FUNCTIONS ---
+        async function loadMyProfile() {
+            document.getElementById('p-name').innerText = me.name;
+            document.getElementById('p-bio').innerText = me.bio || "Breathe. Believe. Begin. 🌿";
+            document.getElementById('p-dp').src = me.dp || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+            
+            const pSnap = await db.collection("posts").where("uid", "==", auth.currentUser.uid).get();
+            document.getElementById('post-count').innerText = pSnap.size;
+            
+            const uDoc = await db.collection("users").doc(auth.currentUser.uid).get();
+            document.getElementById('follower-count').innerText = uDoc.data().followers || 0;
+
+            let gh = "";
+            pSnap.forEach(doc => gh += `<img src="${doc.data().url}" class="grid-item">`);
+            document.getElementById('p-grid').innerHTML = gh;
+        }
+
+        function openEditModal() {
+            const n = prompt("New Name:", me.name);
+            const b = prompt("New Bio:", me.bio);
+            const d = prompt("New DP URL:", me.dp);
+            if(n) {
+                db.collection("users").doc(auth.currentUser.uid).update({name: n, bio: b, dp: d}).then(()=>location.reload());
+            }
+        }
+
+        // --- FEED & CHAT ---
         function loadFeed() {
-            db.collection("posts").where("type","==","photo").orderBy("time","desc").onSnapshot(snap => {
+            db.collection("posts").orderBy("time", "desc").onSnapshot(snap => {
                 let h = "";
                 snap.forEach(doc => {
                     const d = doc.data();
-                    h += `<div class="post">
-                        <div class="post-header"><img src="${d.userDp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="post-dp">${d.username}</div>
-                        <div style="position:relative;" ondblclick="handleLike('${doc.id}', ${d.likes || 0}, this)">
-                            <div class="big-heart">❤️</div>
-                            <img src="${d.url}" class="post-img">
-                        </div>
-                        <div class="post-actions"><span>❤️</span> <span onclick="alert('Comment box coming!')">💬</span> <span>✈️</span></div>
-                        <div class="likes-text">${d.likes || 0} likes</div>
+                    h += `<div style="border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:10px;">
+                        <div style="padding:10px; font-weight:bold;">@${d.username}</div>
+                        <img src="${d.url}" style="width:100%;" ondblclick="alert('Liked!')">
+                        <div style="padding:10px;">❤️ ${d.likes || 0} likes</div>
                     </div>`;
                 });
                 document.getElementById('posts-list').innerHTML = h;
             });
         }
 
-        async function handleLike(id, current, el) {
-            const heart = el.querySelector('.big-heart');
-            heart.classList.add('animate-heart');
-            setTimeout(() => heart.classList.remove('animate-heart'), 800);
-            await db.collection("posts").doc(id).update({ likes: current + 1 });
-        }
-
-        // --- PROFILE GRID ---
-        async function loadProfile() {
-            document.getElementById('p-name').innerText = me.name;
-            document.getElementById('p-bio').innerText = me.bio;
-            document.getElementById('p-dp').src = me.dp || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
-            
-            const snap = await db.collection("posts").where("uid","==",auth.currentUser.uid).get();
-            document.getElementById('count-posts').innerText = snap.size;
-            let gh = "";
-            snap.forEach(doc => gh += `<img src="${doc.data().url}" class="grid-item">`);
-            document.getElementById('p-grid').innerHTML = gh || "<p style='padding:20px; color:gray;'>No posts yet</p>";
-        }
-
-        // --- CHAT SYSTEM ---
-        function loadUsers() {
-            db.collection("users").get().then(snap => {
-                let h = "";
-                snap.forEach(doc => {
-                    if(doc.id !== auth.currentUser.uid) {
-                        const u = doc.data();
-                        h += `<div class="chat-list-item" onclick="openChat('${doc.id}', '${u.name}')">
-                            <img src="${u.dp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="post-dp">
-                            <b>${u.name}</b>
-                        </div>`;
-                    }
-                });
-                document.getElementById('user-list').innerHTML = h;
-            });
-        }
-
-        function openChat(id, name) {
-            activeUid = id; document.getElementById('chat-title').innerText = name;
-            show('chat-window');
-            const cid = [auth.currentUser.uid, id].sort().join("_");
-            db.collection("chats").doc(cid).collection("messages").orderBy("time","asc").onSnapshot(snap => {
-                let h = "";
-                snap.forEach(doc => {
-                    const m = doc.data();
-                    h += `<div class="msg ${m.sender === auth.currentUser.uid ? 'sent' : 'rec'}">${m.text}</div>`;
-                });
-                const b = document.getElementById('msg-list'); b.innerHTML = h; b.scrollTop = b.scrollHeight;
-            });
-        }
-
-        async function sendMsg() {
-            const t = document.getElementById('msg-in').value; if(!t) return;
-            const cid = [auth.currentUser.uid, activeUid].sort().join("_");
-            await db.collection("chats").doc(cid).collection("messages").add({ text: t, sender: auth.currentUser.uid, time: Date.now() });
-            document.getElementById('msg-in').value = "";
-        }
-
-        // --- REELS & STORY ---
-        function loadReels() {
-            db.collection("posts").where("type","==","reel").onSnapshot(snap => {
-                let h = "";
-                snap.forEach(doc => {
-                    h += `<div style="height:92vh; scroll-snap-align:start; position:relative;">
-                        <video src="${doc.data().url}" style="width:100%; height:100%; object-fit:cover;" loop autoplay muted playsinline></video>
-                    </div>`;
-                });
-                document.getElementById('reels-list').innerHTML = h;
-            });
-        }
-
-        function uploadContent() {
-            const t = confirm("Reel upload karni hai? (Cancel for Photo)") ? "reel" : "photo";
-            const u = prompt("URL paste karein:");
-            if(u) db.collection("posts").add({ url: u, type: t, uid: auth.currentUser.uid, username: me.name, userDp: me.dp, likes: 0, time: Date.now() });
-        }
-
-        function addStory() {
-            const u = prompt("Story Image URL:");
-            if(u) db.collection("stories").add({ url: u, uid: auth.currentUser.uid, dp: me.dp, name: me.name, time: Date.now() });
-        }
-
-        function loadStories() {
-            db.collection("stories").onSnapshot(snap => {
-                let h = "";
-                snap.forEach(doc => h += `<div><img src="${doc.data().dp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="story-circle"></div>`);
-                document.getElementById('story-list').innerHTML = h || "No Stories";
-            });
-        }
-
-        function openEdit() {
-            const n = prompt("New Name:", me.name);
-            const b = prompt("New Bio:", me.bio);
-            const d = prompt("New DP URL:", me.dp);
-            if(n) {
-                me = { name: n, bio: b || "", dp: d || "" };
-                db.collection("users").doc(auth.currentUser.uid).set(me).then(() => location.reload());
-            }
+        function upload() {
+            const u = prompt("Image URL:");
+            if(u) db.collection("posts").add({url: u, uid: auth.currentUser.uid, username: me.name, time: Date.now(), likes: 0});
         }
     </script>
 </body>
