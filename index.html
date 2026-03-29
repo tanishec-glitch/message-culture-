@@ -1,242 +1,226 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WinCash VIP - Professional Gaming</title>
+    <title>WinCash - Play & Earn</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        :root { --gold: #ffd700; --bg: #1a0202; --card: #2d0505; }
-        * { box-sizing: border-box; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: var(--bg); color: white; overflow: hidden; }
-        
-        .screen { position: fixed; top: 0; width: 100%; height: 100%; display: none; flex-direction: column; background: url('https://www.transparenttextures.com/patterns/dark-matter.png'), linear-gradient(to bottom, #4e0505, #1a0202); }
+        :root { --gold: #ffd700; --dark: #121212; --card: #1e1e1e; }
+        body { margin: 0; font-family: sans-serif; background: var(--dark); color: white; overflow: hidden; }
+        .screen { position: fixed; top: 0; width: 100%; height: 100%; display: none; flex-direction: column; }
         .active { display: flex; }
-
-        /* HEADER */
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(0,0,0,0.5); border-bottom: 1px solid var(--gold); }
-        .user-info { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        .avatar { width: 40px; height: 40px; border: 2px solid var(--gold); border-radius: 50%; }
-        .balance-box { background: rgba(0,0,0,0.8); padding: 4px 12px; border-radius: 20px; border: 1px solid var(--gold); color: var(--gold); font-weight: bold; }
-
-        /* GAME GRID */
-        .game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px; overflow-y: auto; flex: 1; padding-bottom: 80px; }
-        .game-card { background: var(--card); border: 2px solid #5a0a0a; border-radius: 12px; position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        .game-card img { width: 100%; display: block; border-bottom: 1px solid #5a0a0a; }
-        .game-card p { margin: 5px; text-align: center; font-size: 12px; font-weight: bold; color: #ccc; }
-        .tag-hot { position: absolute; top: 5px; right: 5px; background: red; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-
-        /* BOTTOM NAV */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 65px; background: rgba(0,0,0,0.9); display: flex; justify-content: space-around; align-items: center; border-top: 2px solid var(--gold); }
-        .nav-item { text-align: center; color: #888; font-size: 10px; background: none; border: none; }
-        .shop-btn { background: linear-gradient(to bottom, #ffd700, #ff8c00); color: black !important; padding: 8px 20px; border-radius: 20px; font-weight: bold; border: none; }
-
-        /* MODALS */
-        .modal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:2000; display:none; justify-content:center; align-items:center; }
-        .modal-content { background:#222; width:85%; padding:20px; border-radius:15px; border:1px solid var(--gold); text-align:center; max-height: 80vh; overflow-y: auto; }
-        input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #444; color: #fff; border-radius: 8px; }
-        .btn-main { width: 100%; padding: 12px; background: var(--gold); color: #000; border: none; border-radius: 8px; font-weight: bold; }
-
-        /* DVT SCREEN */
-        .dvt-area { flex: 1; background: #06402b; display: flex; flex-direction: column; }
-        .bet-zones { display: grid; grid-template-columns: 1fr 0.6fr 1fr; gap: 10px; padding: 10px; height: 180px; margin-top: auto; margin-bottom: 80px; }
-        .zone { border: 2px solid rgba(255,255,255,0.1); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px; }
-        .zone.dragon { background: rgba(0,0,255,0.3); border-color: blue; }
-        .zone.tiger { background: rgba(255,0,0,0.3); border-color: red; }
-        .zone.tie { background: rgba(0,128,0,0.3); border-color: green; }
+        input { width: 80%; padding: 12px; margin: 10px 0; border-radius: 5px; border: 1px solid #444; background: #000; color: #fff; }
+        .btn { padding: 12px 25px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .btn-gold { background: var(--gold); color: #000; }
+        .header { background: #000; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--gold); }
+        .game-card { background: var(--card); margin: 10px; padding: 20px; border-radius: 10px; text-align: center; border: 1px solid #333; }
+        .modal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:none; justify-content:center; align-items:center; z-index:100; }
+        .modal-box { background: #222; padding: 20px; border-radius: 10px; width: 85%; text-align: center; border: 1px solid var(--gold); }
     </style>
 </head>
 <body>
 
-    <div id="lobby-scr" class="screen active">
+    <div id="auth-scr" class="screen active" style="justify-content:center; align-items:center;">
+        <h2 style="color:var(--gold)">WinCash Login</h2>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="pass" placeholder="Password">
+        <button class="btn btn-gold" onclick="handleAuth('login')">LOGIN</button>
+        <button class="btn" onclick="handleAuth('reg')" style="color:var(--gold); background:none; margin-top:10px;">Register New Account</button>
+    </div>
+
+    <div id="main-scr" class="screen">
         <div class="header">
-            <div class="user-info" onclick="adminTrigger()">
-                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="avatar">
-                <div>
-                    <div style="font-size: 10px; color: #aaa;">ID: <span id="user-id-display">5560124</span></div>
-                    <div class="balance-box">₹ <span id="wall-bal">0.00</span></div>
-                </div>
+            <div onclick="adminTrigger()" style="cursor:pointer;">
+                <b id="display-name">User</b><br>
+                <small style="color:gray;">ID: <span id="display-id">...</span></small>
             </div>
-            <div style="color:var(--gold); font-weight:bold;">WinCash VIP</div>
-        </div>
-
-        <div class="game-grid">
-            <div class="game-card" onclick="openGame('dvt')">
-                <span class="tag-hot">HOT</span>
-                <img src="https://img.freepik.com/premium-photo/dragon-tiger-mascot-logo-design_1029473-12496.jpg">
-                <p>Dragon vs Tiger</p>
-            </div>
-            <div class="game-card" onclick="alert('Coming Soon!')">
-                <img src="https://img.freepik.com/free-vector/casino-gamble-composition-with-dice-chips_1284-18542.jpg">
-                <p>7 Up Down</p>
-            </div>
-            <div class="game-card" onclick="alert('Coming Soon!')">
-                <img src="https://img.freepik.com/free-vector/pixel-art-mysterious-treasure-chest_1284-52422.jpg">
-                <p>Mines</p>
-            </div>
-            <div class="game-card" onclick="alert('Coming Soon!')">
-                <img src="https://img.freepik.com/free-vector/luxury-car-concept-illustration_114360-14995.jpg">
-                <p>Car Roulette</p>
+            <div style="text-align:right;">
+                <b style="color:var(--gold);">₹ <span id="wall-bal">0</span></b><br>
+                <small onclick="logout()" style="color:red;">Logout</small>
             </div>
         </div>
-
-        <div class="bottom-nav">
-            <button class="nav-item">Notice</button>
-            <button class="nav-item">Share</button>
-            <button class="shop-btn" onclick="showModal('add-modal')">SHOP</button>
-            <button class="nav-item" onclick="showModal('wit-modal')">Withdraw</button>
-            <button class="nav-item">Setting</button>
+        <div style="overflow-y:auto; flex:1;">
+            <div class="game-card" onclick="showGame('dvt')">
+                <h3>Dragon vs Tiger 🐯</h3>
+                <p>Play & Win 2X Cash</p>
+            </div>
+            <div class="game-card" onclick="showGame('7up')">
+                <h3>7 Up Down 🎲</h3>
+                <p>Dice Betting Game</p>
+            </div>
+        </div>
+        <div style="display:flex; padding:10px; gap:10px; background:#000;">
+            <button class="btn btn-gold" style="flex:1;" onclick="toggleModal('add-modal', true)">DEPOSIT</button>
+            <button class="btn" style="flex:1; background:#333; color:white;" onclick="toggleModal('wit-modal', true)">WITHDRAW</button>
         </div>
     </div>
 
-    <div id="dvt-scr" class="screen">
+    <div id="dvt-scr" class="screen" style="background:#06402b;">
         <div class="header">
-            <button onclick="backToLobby()" style="background:none; border:none; color:gold; font-size:20px;">←</button>
+            <button onclick="showScreen('main-scr')" style="background:none; border:none; color:gold;">Back</button>
             <b>Dragon vs Tiger</b>
-            <div class="balance-box">₹ <span id="game-bal">0.00</span></div>
+            <span>₹<span id="game-bal">0</span></span>
         </div>
-        <div class="dvt-area">
-            <div style="display:flex; justify-content:center; gap:50px; margin-top:40px;">
-                <div id="card-d" style="width:70px; height:100px; background:white; border-radius:5px; border:2px solid gold; color:black; display:flex; justify-content:center; align-items:center; font-size:24px; font-weight:bold;">?</div>
-                <div id="card-t" style="width:70px; height:100px; background:white; border-radius:5px; border:2px solid gold; color:black; display:flex; justify-content:center; align-items:center; font-size:24px; font-weight:bold;">?</div>
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+            <div style="display:flex; gap:30px; margin-bottom:50px;">
+                <div id="card-d" style="width:60px; height:80px; background:white; color:black; border-radius:5px; display:flex; justify-content:center; align-items:center; font-size:24px; font-weight:bold;">?</div>
+                <div id="card-t" style="width:60px; height:80px; background:white; color:black; border-radius:5px; display:flex; justify-content:center; align-items:center; font-size:24px; font-weight:bold;">?</div>
             </div>
-            <div class="bet-zones">
-                <div class="zone dragon" onclick="placeBet('dragon')">DRAGON<br>1:1</div>
-                <div class="zone tie" onclick="placeBet('tie')">TIE<br>1:8</div>
-                <div class="zone tiger" onclick="placeBet('tiger')">TIGER<br>1:1</div>
+            <div style="display:flex; gap:10px; width:90%;">
+                <button onclick="bet('dragon')" style="flex:1; padding:30px; background:blue; color:white; border:none; border-radius:10px;">DRAGON</button>
+                <button onclick="bet('tiger')" style="flex:1; padding:30px; background:red; color:white; border:none; border-radius:10px;">TIGER</button>
             </div>
         </div>
     </div>
 
     <div id="add-modal" class="modal">
-        <div class="modal-content">
-            <h3 style="color:var(--gold)">Add Chips 🪙</h3>
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=9691506119@ibl" style="border:3px solid white; border-radius:10px; margin-bottom:10px;">
-            <p style="font-size:12px; color:#aaa;">Scan & Pay, then enter UTR</p>
-            <input type="number" id="dep-amt" placeholder="Amount (Min ₹100)">
-            <input type="text" id="dep-utr" placeholder="12 Digit UTR Number">
-            <button class="btn-main" onclick="submitDeposit()">Submit Deposit</button>
-            <button onclick="hideModal('add-modal')" style="background:none; border:none; color:gray; margin-top:10px;">Close</button>
+        <div class="modal-box">
+            <h3>Add Money 💰</h3>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=9691506119@ibl" style="border-radius:10px;">
+            <p>Scan & Pay, then enter UTR</p>
+            <input type="number" id="dep-amt" placeholder="Amount (Min 100)">
+            <input type="text" id="dep-utr" placeholder="12 Digit UTR">
+            <button class="btn btn-gold" onclick="submitDep()">SUBMIT</button>
+            <button onclick="toggleModal('add-modal', false)" style="background:none; border:none; color:gray; margin-top:10px;">Close</button>
         </div>
     </div>
 
     <div id="wit-modal" class="modal">
-        <div class="modal-content">
-            <h3 style="color:var(--gold)">Withdraw 💸</h3>
+        <div class="modal-box">
+            <h3>Withdraw 💸</h3>
             <input type="text" id="wit-upi" placeholder="UPI ID (abc@ybl)">
-            <input type="number" id="wit-amt" placeholder="Min ₹200">
-            <button class="btn-main" onclick="submitWithdraw()">Withdraw Now</button>
-            <button onclick="hideModal('wit-modal')" style="background:none; border:none; color:gray; margin-top:10px;">Cancel</button>
+            <input type="number" id="wit-amt" placeholder="Min Amount 200">
+            <button class="btn btn-gold" onclick="submitWit()">WITHDRAW</button>
+            <button onclick="toggleModal('wit-modal', false)" style="background:none; border:none; color:gray; margin-top:10px;">Close</button>
         </div>
     </div>
 
     <div id="admin-modal" class="modal">
-        <div class="modal-content" style="background:#111;">
-            <h3 style="color:gold;">Admin Approval 🛡️</h3>
+        <div class="modal-box" style="max-height:80%; overflow-y:auto;">
+            <h3 style="color:gold;">Admin Panel 🛡️</h3>
             <div id="admin-list" style="text-align:left; font-size:12px;"></div>
-            <button onclick="hideModal('admin-modal')" style="margin-top:20px; color:white; background:red; border:none; padding:10px; border-radius:5px;">Exit</button>
+            <button class="btn" onclick="toggleModal('admin-modal', false)" style="background:red; color:white; margin-top:20px;">EXIT</button>
         </div>
     </div>
 
     <script>
-        // --- FIREBASE CONFIG (Yahan Apni Details Dalo) ---
+        // --- FIREBASE CONFIG (Paste your own here) ---
         const firebaseConfig = {
             apiKey: "AIzaSy...",
             databaseURL: "https://your-app-rtdb.firebaseio.com",
             projectId: "your-app",
-            appId: "1:..."
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        const auth = firebase.auth();
 
-        // --- GLOBAL VARIABLES ---
-        let userId = "User_" + Math.floor(100000 + Math.random() * 900000);
-        document.getElementById('user-id-display').innerText = userId;
-        let myBalance = 0;
+        let currentUser = null;
+        let myBal = 0;
 
-        // --- INITIAL LOAD ---
-        db.ref('users/' + userId + '/balance').on('value', (snap) => {
-            myBalance = snap.val() || 500; // New user gets 500
-            document.getElementById('wall-bal').innerText = myBalance.toFixed(2);
-            document.getElementById('game-bal').innerText = myBalance.toFixed(2);
+        // --- AUTH SYSTEM ---
+        function handleAuth(type) {
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('pass').value;
+            if(type === 'reg') {
+                auth.createUserWithEmailAndPassword(e, p).then(u => {
+                    db.ref('users/' + u.user.uid).set({ balance: 500, email: e });
+                    alert("Account Created! 500 Bonus Added.");
+                }).catch(err => alert(err.message));
+            } else {
+                auth.signInWithEmailAndPassword(e, p).catch(err => alert(err.message));
+            }
+        }
+
+        auth.onAuthStateChanged(user => {
+            if(user) {
+                currentUser = user;
+                showScreen('main-scr');
+                document.getElementById('display-id').innerText = user.uid.substr(0,8);
+                db.ref('users/' + user.uid + '/balance').on('value', s => {
+                    myBal = s.val() || 0;
+                    document.getElementById('wall-bal').innerText = myBal.toFixed(2);
+                    document.getElementById('game-bal').innerText = myBal.toFixed(2);
+                });
+            } else { showScreen('auth-scr'); }
         });
 
-        // --- NAVIGATION ---
-        function openGame(id) { document.getElementById('lobby-scr').classList.remove('active'); document.getElementById(id + '-scr').classList.add('active'); }
-        function backToLobby() { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById('lobby-scr').classList.add('active'); }
-        function showModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function hideModal(id) { document.getElementById(id).style.display = 'none'; }
+        function logout() { auth.signOut(); }
 
-        // --- GAME LOGIC (DVT) ---
-        function placeBet(side) {
-            if(myBalance < 10) { alert("Balance low!"); return; }
-            db.ref('users/' + userId).update({ balance: myBalance - 10 });
-            
+        // --- UI HELPERS ---
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+        function toggleModal(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; }
+        function showGame(g) { if(g === 'dvt') showScreen('dvt-scr'); else alert("Coming Soon!"); }
+
+        // --- GAME LOGIC ---
+        function bet(side) {
+            if(myBal < 10) return alert("Low Balance!");
+            db.ref('users/' + currentUser.uid).update({ balance: myBal - 10 });
             setTimeout(() => {
                 const d = Math.floor(Math.random() * 13) + 1;
                 const t = Math.floor(Math.random() * 13) + 1;
                 document.getElementById('card-d').innerText = d;
                 document.getElementById('card-t').innerText = t;
-                
-                let win = (d > t ? 'dragon' : (t > d ? 'tiger' : 'tie'));
-                if(side === win) {
-                    let prize = (win === 'tie' ? 90 : 20);
-                    db.ref('users/' + userId).update({ balance: (myBalance - 10) + prize });
-                    alert("Win! " + win.toUpperCase());
-                } else { alert("Lost! Winner: " + win.toUpperCase()); }
-            }, 1500);
+                const win = d > t ? 'dragon' : (t > d ? 'tiger' : 'tie');
+                if(side === win) db.ref('users/' + currentUser.uid).update({ balance: (myBal - 10) + 20 });
+                alert("Winner: " + win.toUpperCase());
+            }, 1000);
         }
 
-        // --- SHOP & WITHDRAW ---
-        function submitDeposit() {
-            const amt = document.getElementById('dep-amt').value;
-            const utr = document.getElementById('dep-utr').value;
-            if(amt < 100 || utr.length < 12) { alert("Invalid details!"); return; }
-            db.ref('admin/deposits').push({ userId, amount: Number(amt), utr, status: 'pending' });
-            alert("Request Sent!"); hideModal('add-modal');
+        // --- DEPOSIT & WITHDRAW ---
+        function submitDep() {
+            const a = document.getElementById('dep-amt').value;
+            const u = document.getElementById('dep-utr').value;
+            if(a < 100 || u.length < 12) return alert("Check Details!");
+            db.ref('admin/requests').push({ uid: currentUser.uid, amt: Number(a), utr: u, type: 'dep', status: 'pending' });
+            alert("Sent to Admin!"); toggleModal('add-modal', false);
         }
 
-        function submitWithdraw() {
-            const amt = document.getElementById('wit-amt').value;
-            const upi = document.getElementById('wit-upi').value;
-            if(amt < 200 || amt > myBalance) { alert("Invalid Amount!"); return; }
-            db.ref('users/' + userId).update({ balance: myBalance - amt });
-            db.ref('admin/withdraws').push({ userId, amount: Number(amt), upi, status: 'pending' });
-            alert("Withdrawal Requested!"); hideModal('wit-modal');
+        function submitWit() {
+            const a = document.getElementById('wit-amt').value;
+            const u = document.getElementById('wit-upi').value;
+            if(a < 200 || a > myBal) return alert("Check Balance/Amount!");
+            db.ref('users/' + currentUser.uid).update({ balance: myBal - a });
+            db.ref('admin/requests').push({ uid: currentUser.uid, amt: Number(a), upi: u, type: 'wit', status: 'pending' });
+            alert("Request Placed!"); toggleModal('wit-modal', false);
         }
 
-        // --- ADMIN TRIGGER ---
+        // --- ADMIN PANEL ---
         let clicks = 0;
         function adminTrigger() {
             clicks++;
             if(clicks >= 3) {
-                if(prompt("Admin Pass:") === "tanish123") { showModal('admin-modal'); loadAdmin(); }
+                if(prompt("Pass:") === "tanish123") { toggleModal('admin-modal', true); loadAdmin(); }
                 clicks = 0;
             }
         }
 
         function loadAdmin() {
-            db.ref('admin/deposits').on('value', (snap) => {
-                let html = "";
-                snap.forEach(child => {
-                    const d = child.val();
-                    if(d.status === 'pending') {
-                        html += `<div style="border-bottom:1px solid #333; padding:5px;">
-                            ${d.userId} | ₹${d.amount}<br>UTR: ${d.utr}
-                            <button onclick="approve('${child.key}','${d.userId}',${d.amount})" style="background:green; color:white; border:none; border-radius:3px;">Approve</button>
+            db.ref('admin/requests').on('value', snap => {
+                let h = "";
+                snap.forEach(c => {
+                    const r = c.val();
+                    if(r.status === 'pending') {
+                        h += `<div style="border-bottom:1px solid #444; padding:10px;">
+                            ${r.type.toUpperCase()} | ₹${r.amt} | ${r.uid.substr(0,5)}<br>
+                            ${r.type === 'dep' ? 'UTR: '+r.utr : 'UPI: '+r.upi}
+                            <button onclick="approve('${c.key}','${r.uid}',${r.amt},'${r.type}')" style="background:green; color:white;">Approve</button>
                         </div>`;
                     }
                 });
-                document.getElementById('admin-list').innerHTML = html || "No pending requests.";
+                document.getElementById('admin-list').innerHTML = h || "No pending requests.";
             });
         }
 
-        function approve(key, uid, amt) {
-            db.ref('users/' + uid + '/balance').transaction(b => (b || 0) + amt);
-            db.ref('admin/deposits/' + key).update({ status: 'success' });
-            alert("Approved!");
+        function approve(key, uid, amt, type) {
+            if(type === 'dep') db.ref('users/' + uid + '/balance').transaction(b => (b || 0) + amt);
+            db.ref('admin/requests/' + key).update({ status: 'done' });
+            alert("Done!");
         }
     </script>
 </body>
