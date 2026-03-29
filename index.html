@@ -1,112 +1,86 @@
-<!DOCTYPE html>
-<html lang="en">
+    <!DOCTYPE html>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WinCash - Final Stable</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <title>Ludo Pro Test</title>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore-compat.js"></script>
     <style>
-        :root { --gold: #ffd700; --bg: #0f0f0f; }
-        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; text-align: center; }
-        .screen { position: fixed; top: 0; width: 100%; height: 100%; display: none; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
-        .active { display: flex; }
-        input { width: 100%; max-width: 300px; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #000; color: white; }
-        .btn { width: 100%; max-width: 300px; padding: 12px; border: none; border-radius: 8px; font-weight: bold; background: var(--gold); color: black; margin-top: 10px; cursor: pointer; }
-        .header { position: fixed; top: 0; width: 100%; background: #000; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gold); }
+        body { font-family: sans-serif; text-align: center; background: #2c3e50; color: white; }
+        #board { width: 300px; height: 300px; margin: 20px auto; border: 5px solid #ecf0f1; position: relative; background: #fff; display: grid; grid-template-columns: repeat(3, 1fr); }
+        .zone { border: 1px solid #ccc; height: 100px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000; }
+        .red { background: #ff4d4d; } .blue { background: #4d94ff; }
+        #dice-btn { padding: 15px 30px; font-size: 20px; cursor: pointer; background: #27ae60; color: white; border: none; border-radius: 5px; }
+        #status { margin-top: 20px; font-size: 1.2em; }
     </style>
 </head>
 <body>
 
-    <div id="auth-scr" class="screen active">
-        <h1 style="color:var(--gold)">WinCash VIP</h1>
-        <p>Login to start earning</p>
-        <input type="email" id="email" placeholder="Email Address">
-        <input type="password" id="pass" placeholder="Password (Min 6 char)">
-        <button class="btn" onclick="handleAuth('login')">LOGIN</button>
-        <button class="btn" style="background:none; color:var(--gold);" onclick="handleAuth('reg')">Register New Account</button>
+    <h1>Ludo Multiplayer Test</h1>
+    <div id="board">
+        <div class="zone red">RED BASE</div>
+        <div class="zone">PATH</div>
+        <div class="zone blue">BLUE BASE</div>
     </div>
 
-    <div id="main-scr" class="screen">
-        <div class="header">
-            <b>Welcome User</b>
-            <div style="color:var(--gold); font-weight:bold;">₹ <span id="wall-bal">0.00</span></div>
-        </div>
-        <div style="margin-top: 80px;">
-            <div style="background:#1a1a1a; padding:30px; border-radius:15px; border:1px solid #333;" onclick="alert('Dragon vs Tiger Opening...')">
-                <img src="https://img.freepik.com/premium-photo/dragon-tiger-mascot-logo-design_1029473-12496.jpg" style="width:100px; border-radius:10px;">
-                <h3>Dragon vs Tiger</h3>
-            </div>
-            <button class="btn" onclick="logout()" style="background:#333; color:white; margin-top:20px;">Logout</button>
-        </div>
-    </div>
+    <div id="status">Current Turn: <span id="turn-display">Loading...</span></div>
+    <h2 id="dice-result">Dice: -</h2>
+    <button id="dice-btn">ROLL DICE</button>
 
     <script>
-        // --- 🟢 STEP 2: YAHAN APNI DETAILS DALO 🟢 ---
+        // 1. YOUR FIREBASE CONFIG (Paste from Console)
         const firebaseConfig = {
-            apiKey: "AIzaSyDEeypOjcHmWGa-U2Lw-xsh91_V...", // Screenshot se copy karo
-            authDomain: "my-insta-backend.firebaseapp.com",
-            databaseURL: "https://my-insta-backend-default-rtdb.firebaseio.com",
-            projectId: "my-insta-backend",
-            storageBucket: "my-insta-backend.firebasestorage.app",
-            messagingSenderId: "955106968523",
-            appId: "1:955106968523:web:4f038e3f139d1f06ba6c4e"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_ID",
+            appId: "YOUR_APP_ID"
         };
 
-        // Initialize Firebase
-        try {
-            firebase.initializeApp(firebaseConfig);
-            console.log("Firebase Connected!");
-        } catch (e) {
-            alert("Firebase Config mein galti hai!");
-        }
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const gameRef = db.collection("games").doc("test-game");
 
-        const auth = firebase.auth();
-        const db = firebase.database();
-
-        // AUTH ACTION
-        function handleAuth(type) {
-            const e = document.getElementById('email').value;
-            const p = document.getElementById('pass').value;
-
-            if(!e || p.length < 6) {
-                alert("Email sahi dalo aur Password kam se kam 6 akshar ka!");
-                return;
-            }
-
-            if(type === 'reg') {
-                auth.createUserWithEmailAndPassword(e, p)
-                    .then((userCredential) => {
-                        db.ref('users/' + userCredential.user.uid).set({ balance: 500 });
-                        alert("Account Ban Gaya! Login ho raha hai...");
-                    })
-                    .catch((error) => alert("Error: " + error.message));
-            } else {
-                auth.signInWithEmailAndPassword(e, p)
-                    .catch((error) => alert("Login Fail: " + error.message));
-            }
-        }
-
-        // LISTEN FOR USER
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                document.getElementById('auth-scr').classList.remove('active');
-                document.getElementById('main-scr').classList.add('active');
-                
-                // Get Balance
-                db.ref('users/' + user.uid + '/balance').on('value', (snap) => {
-                    document.getElementById('wall-bal').innerText = (snap.val() || 0).toFixed(2);
+        // 2. INITIALIZE GAME DATA
+        async function initGame() {
+            const doc = await gameRef.get();
+            if (!doc.exists) {
+                await gameRef.set({
+                    turn: "red",
+                    diceValue: 0,
+                    lastRollTime: Date.now()
                 });
-            } else {
-                document.getElementById('main-scr').classList.remove('active');
-                document.getElementById('auth-scr').classList.add('active');
             }
+        }
+
+        // 3. LISTEN FOR REAL-TIME UPDATES (The "Sync" Magic)
+        gameRef.onSnapshot((doc) => {
+            const data = doc.data();
+            document.getElementById("turn-display").innerText = data.turn.toUpperCase();
+            document.getElementById("dice-result").innerText = "Dice: " + data.diceValue;
+            
+            // Visual feedback for turn
+            document.getElementById("turn-display").style.color = data.turn;
         });
 
-        function logout() { auth.signOut(); }
+        // 4. ROLL LOGIC
+        document.getElementById("dice-btn").onclick = async () => {
+            const newValue = Math.floor(Math.random() * 6) + 1;
+            const currentDoc = await gameRef.get();
+            const currentTurn = currentDoc.data().turn;
+
+            // Switch turns
+            const nextTurn = currentTurn === "red" ? "blue" : "red";
+
+            await gameRef.update({
+                diceValue: newValue,
+                turn: nextTurn,
+                lastRollTime: Date.now()
+            });
+        };
+
+        initGame();
     </script>
 </body>
 </html>
-
-                
+    
