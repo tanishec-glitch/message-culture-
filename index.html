@@ -53,8 +53,7 @@
 
         <input type="text" class="search-bar" placeholder="Ask Meta AI or Search">
 
-        <div class="chat-list" id="contacts">
-            </div>
+        <div class="chat-list" id="contacts"></div>
 
         <button class="fab">💬</button>
 
@@ -71,15 +70,16 @@
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
 
     <script>
-        // FIREBASE CONFIG (Aapki Asli Details)
+        // AAPKA ASLI FIREBASE CONFIG
         const firebaseConfig = {
-            apiKey: "AIzaSyDEypOjcHmWga-U2Lw-xshTwXYKXY", 
-            authDomain: "my-insta-backend.firebaseapp.com",
-            databaseURL: "https://my-insta-backend-default-rtdb.firebaseio.com",
-            projectId: "my-insta-backend",
-            storageBucket: "my-insta-backend.appspot.com",
-            messagingSenderId: "955106968523",
-            appId: "1:955106968523:web:4f038e3f139d1f03"
+          apiKey: "AIzaSyDEEypOjcHmWga-U2Lw-xshTwXYKYzJp04",
+          authDomain: "my-insta-backend.firebaseapp.com",
+          databaseURL: "https://my-insta-backend-default-rtdb.firebaseio.com",
+          projectId: "my-insta-backend",
+          storageBucket: "my-insta-backend.firebasestorage.app",
+          messagingSenderId: "955106968523",
+          appId: "1:955106968523:web:4f038e3f139d1f06ba6c4e",
+          measurementId: "G-BZLR2LYJ5H"
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -93,7 +93,7 @@
             const errDiv = document.getElementById('err');
 
             if (p.length < 6) {
-                errDiv.innerText = "Password kam se kam 6 characters ka ho!";
+                errDiv.innerText = "Password 6+ characters ka rakho!";
                 return;
             }
 
@@ -124,7 +124,7 @@
                     <div class="avatar">👤</div>
                     <div class="chat-info">
                         <div class="chat-name">${auth.currentUser.email} (You)</div>
-                        <div class="chat-msg">Tap to message yourself</div>
+                        <div class="chat-msg">Welcome to WhatsApp Lite! Tap to chat.</div>
                     </div>
                 </div>`;
         }
