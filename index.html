@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WhatsApp Pro Max v3</title>
+    <title>WhatsApp Pro Max v4</title>
     <style>
         :root { --wa-bg: #0b141a; --wa-accent: #25d366; --wa-dim: #8696a0; --wa-header: #111b21; --wa-sent: #005c4b; }
         * { box-sizing: border-box; }
@@ -15,14 +15,13 @@
         .input-field { width: 100%; max-width: 300px; padding: 12px; margin: 8px 0; border-radius: 10px; border: none; background: #2a3942; color: white; outline: none; }
         .btn { width: 100%; max-width: 300px; padding: 12px; background: var(--wa-accent); border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: #0b141a; }
 
-        .top-nav { padding: 15px; display: flex; justify-content: space-between; align-items: center; background: var(--wa-header); font-weight: bold; flex-shrink: 0; border-bottom: 1px solid #202c33; z-index: 10; }
+        .top-nav { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; background: var(--wa-header); border-bottom: 1px solid #202c33; flex-shrink: 0; z-index: 10; }
         .chat-list { flex: 1; overflow-y: auto; }
-        .chat-item { display: flex; padding: 15px; align-items: center; border-bottom: 0.5px solid #202c33; cursor: pointer; }
-        .avatar { width: 42px; height: 42px; background: #3d474c; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .chat-item { display: flex; padding: 12px 15px; align-items: center; border-bottom: 0.5px solid #202c33; cursor: pointer; }
+        .avatar { width: 45px; height: 45px; background: #3d474c; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
         
-        .status-dot { font-size: 10px; margin-right: 4px; }
-        .online { color: var(--wa-accent); }
-        .offline { color: var(--wa-dim); }
+        .online { color: var(--wa-accent); font-weight: bold; }
+        .bio-text { color: var(--wa-dim); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
 
         #chat-window { position: fixed; top: 0; left: 0; z-index: 1000; background: var(--wa-bg); }
         #msg-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 6px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-size: cover; padding-bottom: 100px; }
@@ -32,8 +31,6 @@
         .recv { background: #202c33; align-self: flex-start; border-top-left-radius: 0; }
         
         .m-info { display: flex; justify-content: flex-end; align-items: center; gap: 4px; font-size: 10px; color: #ffffff99; margin-top: 4px; }
-        .tick { color: #53bdeb; font-size: 12px; font-weight: bold; }
-
         .type-area { position: absolute; bottom: 0; width: 100%; padding: 10px 12px 30px 12px; background: var(--wa-header); display: flex; gap: 10px; align-items: center; }
         .msg-input { flex: 1; padding: 12px 18px; border-radius: 25px; border: none; background: #2a3942; color: white; outline: none; font-size: 16px; }
         .send-btn { width: 48px; height: 48px; background: var(--wa-accent); border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #0b141a; }
@@ -44,7 +41,7 @@
     <div id="auth-screen">
         <div>
             <h1 style="color: var(--wa-accent); font-size: 35px; margin:0;">WhatsApp</h1>
-            <p style="color: var(--wa-dim)">v3.0 Online Status</p><br>
+            <p style="color: var(--wa-dim)">v4.0 Live Bio</p><br>
             <input type="email" id="email" class="input-field" placeholder="Email Address">
             <input type="password" id="pass" class="input-field" placeholder="Password">
             <button class="btn" onclick="handleAuth()">LOGIN / JOIN</button>
@@ -56,29 +53,32 @@
             <span>WhatsApp Lite</span>
             <span onclick="auth.signOut()" style="color:var(--wa-accent); font-size:12px; cursor:pointer;">LOGOUT</span>
         </div>
-        <div style="padding: 12px; display: flex; gap: 8px;">
-            <input type="text" id="my-bio" class="input-field" style="margin:0; flex:1;" placeholder="Set your status (e.g. Busy)">
-            <button class="btn" style="width: 70px; padding: 10px;" onclick="updateBio()">SET</button>
+        <div style="padding: 12px; background: #1c2a33; border-bottom: 1px solid #25d36633;">
+            <p style="font-size: 11px; color: var(--wa-accent); margin: 0 0 5px 0;">YOUR BIO STATUS:</p>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="my-bio" class="input-field" style="margin:0; flex:1; height: 40px;" placeholder="Hey there! I am using WhatsApp.">
+                <button class="btn" style="width: 60px; padding: 0; height: 40px;" onclick="updateBio()">SET</button>
+            </div>
         </div>
-        <div style="padding: 0 12px 10px 12px;"><button class="btn" style="width: 100%; background: #202c33; color:white;" onclick="sendRequest()">+ ADD FRIEND</button></div>
+        <div style="padding: 10px;"><button class="btn" style="width: 100%; background: #25d36622; color:var(--wa-accent); border: 1px solid var(--wa-accent);" onclick="sendRequest()">+ ADD FRIEND</button></div>
         <div id="requests-area"></div>
         <div class="chat-list" id="contacts"></div>
     </div>
 
     <div id="chat-window">
         <div class="top-nav">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span onclick="backToHome()" style="font-size: 24px;">←</span>
-                <div class="avatar" style="width:32px; height:32px;">👤</div>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span onclick="backToHome()" style="font-size: 26px;">←</span>
+                <div class="avatar" style="width:36px; height:36px;">👤</div>
                 <div>
-                    <div id="chat-with-name" style="font-size:14px;">Chat</div>
-                    <div id="chat-status" style="font-size:10px;">offline</div>
+                    <div id="chat-with-name" style="font-size:15px; font-weight: bold;">Chat</div>
+                    <div id="chat-status" style="font-size:11px; color: var(--wa-dim);">offline</div>
                 </div>
             </div>
         </div>
         <div id="msg-box"></div>
         <div class="type-area">
-            <input type="text" id="m-input" class="msg-input" placeholder="Type a message">
+            <input type="text" id="m-input" class="msg-input" placeholder="Type a message" oninput="handleTyping()">
             <button class="send-btn" onclick="sendMsg()">➤</button>
         </div>
     </div>
@@ -112,10 +112,10 @@
             document.getElementById('app-screen').style.display = user ? 'flex' : 'none';
             if(user) {
                 const myID = btoa(user.email).replace(/[/=]/g, "");
-                // Online Status Management
-                const statusRef = db.ref(`status/${myID}`);
-                statusRef.set("online");
-                statusRef.onDisconnect().set("offline");
+                db.ref(`status/${myID}`).set("online");
+                db.ref(`status/${myID}`).onDisconnect().set("offline");
+                // Reset Typing on exit
+                db.ref(`typing/${myID}`).onDisconnect().remove();
                 loadData();
             }
         });
@@ -124,7 +124,14 @@
             const bio = document.getElementById('my-bio').value;
             const myID = btoa(auth.currentUser.email).replace(/[/=]/g, "");
             db.ref(`users/${myID}/bio`).set(bio);
-            alert("Bio updated!");
+            alert("Bio Status Updated!");
+        }
+
+        function handleTyping() {
+            const myID = btoa(auth.currentUser.email).replace(/[/=]/g, "");
+            db.ref(`typing/${myID}`).set(true);
+            clearTimeout(window.typingTimer);
+            window.typingTimer = setTimeout(() => db.ref(`typing/${myID}`).remove(), 2000);
         }
 
         function sendRequest() {
@@ -132,46 +139,30 @@
             if(!email || email === auth.currentUser.email) return;
             const targetID = btoa(email).replace(/[/=]/g, "");
             db.ref(`requests/${targetID}/${btoa(auth.currentUser.email).replace(/[/=]/g, "")}`).set({ from: auth.currentUser.email, status: 'pending' });
-            alert("Request sent!");
         }
 
         function loadData() {
             const myID = btoa(auth.currentUser.email).replace(/[/=]/g, "");
             
-            // Pending Requests
             db.ref(`requests/${myID}`).on('value', snap => {
                 const area = document.getElementById('requests-area'); area.innerHTML = "";
-                snap.forEach(child => {
-                    const req = child.val();
-                    if(req.status === 'pending') {
-                        area.innerHTML += `<div class="request-box" style="margin:10px; padding:10px; background:#1c2a33; border-radius:8px;">New Friend: ${req.from}<br><button class="btn" style="padding:5px; margin-top:5px;" onclick="accept('${child.key}', '${req.from}')">Accept</button></div>`;
-                    }
-                });
+                snap.forEach(child => { if(child.val().status === 'pending') area.innerHTML += `<div class="request-box" style="margin:10px; padding:10px; background:#1c2a33; border-radius:8px;">New Friend: ${child.val().from}<br><button class="btn" style="padding:5px; margin-top:5px;" onclick="accept('${child.key}', '${child.val().from}')">Accept</button></div>`; });
             });
 
-            // Friend List with Live Status
             db.ref(`friends/${myID}`).on('value', snap => {
                 const list = document.getElementById('contacts'); list.innerHTML = "";
                 snap.forEach(child => {
-                    const friendEmail = child.val().email;
-                    const friendID = btoa(friendEmail).replace(/[/=]/g, "");
-                    
+                    const fEmail = child.val().email;
+                    const fID = btoa(fEmail).replace(/[/=]/g, "");
                     const div = document.createElement('div');
                     div.className = "chat-item";
-                    div.id = `contact-${friendID}`;
-                    div.innerHTML = `<div class="avatar">👤</div><div><b id="name-${friendID}">${friendEmail}</b><br><small id="status-${friendID}" class="offline">offline</small></div>`;
-                    div.onclick = () => openChat(friendEmail);
+                    div.innerHTML = `<div class="avatar">👤</div><div style="flex:1;"><b>${fEmail}</b><br><small id="list-bio-${fID}" class="bio-text">Loading bio...</small></div><div id="list-dot-${fID}" style="font-size:8px;">●</div>`;
+                    div.onclick = () => openChat(fEmail);
                     list.appendChild(div);
 
-                    // Listen for Online Status & Bio
-                    db.ref(`status/${friendID}`).on('value', s => {
-                        const statusEl = document.getElementById(`status-${friendID}`);
-                        if(statusEl) {
-                            const isOnline = s.val() === "online";
-                            statusEl.innerText = isOnline ? "● online" : "offline";
-                            statusEl.className = isOnline ? "online" : "offline";
-                        }
-                    });
+                    // LIVE BIO & STATUS IN LIST
+                    db.ref(`users/${fID}/bio`).on('value', b => { document.getElementById(`list-bio-${fID}`).innerText = b.val() || "Hey there! I am using WhatsApp."; });
+                    db.ref(`status/${fID}`).on('value', s => { document.getElementById(`list-dot-${fID}`).style.color = s.val() === "online" ? "#25d366" : "#8696a0"; });
                 });
             });
         }
@@ -185,24 +176,34 @@
 
         function openChat(email) {
             activeChat = email;
-            const friendID = btoa(email).replace(/[/=]/g, "");
+            const fID = btoa(email).replace(/[/=]/g, "");
             document.getElementById('chat-window').style.display = 'flex';
             document.getElementById('chat-with-name').innerText = email;
             
-            db.ref(`status/${friendID}`).on('value', s => {
-                document.getElementById('chat-status').innerText = s.val() || "offline";
-                document.getElementById('chat-status').className = s.val() === "online" ? "online" : "offline";
+            // LIVE STATUS & TYING & BIO IN CHAT HEADER
+            db.ref(`status/${fID}`).on('value', s => {
+                const statusTxt = s.val() === "online" ? "online" : "offline";
+                document.getElementById('chat-status').innerText = statusTxt;
+                document.getElementById('chat-status').className = s.val() === "online" ? "online" : "";
+                
+                db.ref(`typing/${fID}`).on('value', t => {
+                    if(t.val()) { document.getElementById('chat-status').innerText = "typing..."; document.getElementById('chat-status').className = "online"; }
+                    else {
+                        db.ref(`users/${fID}/bio`).once('value', b => {
+                            if(s.val() !== "online") document.getElementById('chat-status').innerText = b.val() || "offline";
+                            else document.getElementById('chat-status').innerText = "online";
+                        });
+                    }
+                });
             });
 
             const chatID = [auth.currentUser.email, email].sort().join("").replace(/[@.]/g, "");
             db.ref(`chats/${chatID}`).on('value', snap => {
                 const box = document.getElementById('msg-box'); box.innerHTML = "";
                 snap.forEach(m => {
-                    const data = m.val();
-                    const isMe = data.sender === auth.currentUser.email;
-                    const d = document.createElement('div');
-                    d.className = `msg ${isMe ? 'sent' : 'recv'}`;
-                    d.innerHTML = `${data.text}<div class="m-info">${new Date(data.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} ${isMe ? '<span class="tick">✔✔</span>' : ''}</div>`;
+                    const data = m.val(); const isMe = data.sender === auth.currentUser.email;
+                    const d = document.createElement('div'); d.className = `msg ${isMe ? 'sent' : 'recv'}`;
+                    d.innerHTML = `${data.text}<div class="m-info">${new Date(data.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} ${isMe ? '✔✔' : ''}</div>`;
                     d.onclick = () => { if(isMe && confirm("Delete?")) db.ref(`chats/${chatID}/${m.key}`).remove(); };
                     box.appendChild(d);
                 });
@@ -211,11 +212,11 @@
         }
 
         function sendMsg() {
-            const i = document.getElementById('m-input');
-            if(!i.value.trim()) return;
+            const i = document.getElementById('m-input'); if(!i.value.trim()) return;
             const chatID = [auth.currentUser.email, activeChat].sort().join("").replace(/[@.]/g, "");
             db.ref(`chats/${chatID}`).push({sender: auth.currentUser.email, text: i.value, time: Date.now()});
             i.value = "";
+            db.ref(`typing/${btoa(auth.currentUser.email).replace(/[/=]/g, "")}`).remove();
         }
 
         function backToHome() { document.getElementById('chat-window').style.display = 'none'; }
