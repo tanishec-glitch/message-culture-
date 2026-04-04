@@ -1,47 +1,109 @@
 <!DOCTYPE html>
-<html lang="en-us">
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>TaskCashWeb | Unity</title>
-    <style>body { padding: 0; margin: 0; background: #000; overflow: hidden; }</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskCashWeb - Earn Money</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #121212; color: white; text-align: center; margin: 0; }
+        .card { background: #1e1e1e; margin: 20px auto; padding: 20px; width: 90%; max-width: 400px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        button { background: #4CAF50; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 10px; }
+        #unity-container { width: 100%; height: 400px; background: #000; margin-top: 20px; display: none; }
+        .hidden { display: none; }
+    </style>
 </head>
 <body>
+
+    <div id="auth-section" class="card">
+        <h2>Welcome to TaskCash</h2>
+        <input type="email" id="email" placeholder="Email" style="width:80%; padding:8px; margin:5px;"><br>
+        <input type="password" id="password" placeholder="Password" style="width:80%; padding:8px; margin:5px;"><br>
+        <button onclick="handleSignup()">Register</button>
+        <button onclick="handleLogin()" style="background:#2196F3;">Login</button>
+    </div>
+
+    <div id="dashboard" class="card hidden">
+        <h2 id="user-name">Hello!</h2>
+        <p>Wallet Balance: <span id="balance" style="color:#4CAF50; font-weight:bold; font-size:24px;">0</span> Points</p>
+        <hr>
+        <h3>Tasks</h3>
+        <button onclick="startVideoTask()">📺 Watch Video (Earn 10 pts)</button>
+        <br><br>
+        <button onclick="handleLogout()" style="background:#f44336;">Logout</button>
+    </div>
+
     <div id="unity-container">
-        <canvas id="unity-canvas" width=960 height=600></canvas>
+        <canvas id="unity-canvas"></canvas>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-global.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-global.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-global.js"></script>
 
     <script>
-      // TaskCashWeb Configuration
-      const firebaseConfig = {
-        apiKey: "AIzaSyDEEypOjcHmWga-U2Lw-xshTwXYKYzJp04",
-        authDomain: "taskcashweb-73839467.firebaseapp.com",
-        projectId: "taskcashweb-73839467",
-        storageBucket: "taskcashweb-73839467.appspot.com",
-        messagingSenderId: "955106968523",
-        appId: "1:955106968523:web:02df6c25087d91c1ba6c4e"
-      };
+        const firebaseConfig = {
+            apiKey: "AIzaSyDEEypOjcHmWga-U2Lw-xshTwXYKYzJp04",
+            authDomain: "taskcashweb-73839467.firebaseapp.com",
+            projectId: "taskcashweb-73839467",
+            storageBucket: "taskcashweb-73839467.appspot.com",
+            messagingSenderId: "955106968523",
+            appId: "1:955106968523:web:02df6c25087d91c1ba6c4e"
+        };
 
-      firebase.initializeApp(firebaseConfig);
-      console.log("TaskCashWeb: Firebase Initialized");
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-      // Unity WebGL Loader
-      var buildUrl = "Build";
-      var script = document.createElement("script");
-      script.src = buildUrl + "/web.loader.js";
-      script.onload = () => {
-        createUnityInstance(document.querySelector("#unity-canvas"), {
-          dataUrl: buildUrl + "/web.data",
-          frameworkUrl: buildUrl + "/web.framework.js",
-          codeUrl: buildUrl + "/web.wasm",
-          streamingAssetsUrl: "StreamingAssets",
-          companyName: "TanishMandloi",
-          productName: "TaskCashWeb",
+        // 1. SIGNUP LOGIC
+        async function handleSignup() {
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+            try {
+                const cred = await auth.createUserWithEmailAndPassword(e, p);
+                await db.collection('users').doc(cred.user.uid).set({ balance: 0, email: e });
+                alert("Account Created!");
+            } catch (err) { alert(err.message); }
+        }
+
+        // 2. LOGIN LOGIC
+        async function handleLogin() {
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+            try {
+                await auth.signInWithEmailAndPassword(e, p);
+            } catch (err) { alert(err.message); }
+        }
+
+        // 3. REWARD LOGIC (The Money Maker)
+        function startVideoTask() {
+            alert("Playing Ad Video...");
+            // This is where Unity Ads would trigger. After video ends:
+            updateBalance(10);
+        }
+
+        async function updateBalance(amount) {
+            const user = auth.currentUser;
+            if (user) {
+                const ref = db.collection('users').doc(user.uid);
+                await ref.update({ balance: firebase.firestore.FieldValue.increment(amount) });
+            }
+        }
+
+        // UI SYNC
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                db.collection('users').doc(user.uid).onSnapshot(doc => {
+                    document.getElementById('balance').innerText = doc.data().balance;
+                });
+            } else {
+                document.getElementById('auth-section').classList.remove('hidden');
+                document.getElementById('dashboard').classList.add('hidden');
+            }
         });
-      };
-      document.body.appendChild(script);
+
+        function handleLogout() { auth.signOut(); }
     </script>
 </body>
 </html>
